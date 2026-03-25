@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/AuthService/">
+    <Project Path="src/Services/AuthService/Licit.AuthService.API/Licit.AuthService.API.csproj" />
+    <Project Path="src/Services/AuthService/Licit.AuthService.Application/Licit.AuthService.Application.csproj" />
+    <Project Path="src/Services/AuthService/Licit.AuthService.Domain/Licit.AuthService.Domain.csproj" />
+    <Project Path="src/Services/AuthService/Licit.AuthService.Infrastructure/Licit.AuthService.Infrastructure.csproj" />
+  </Folder>
+</Solution>
