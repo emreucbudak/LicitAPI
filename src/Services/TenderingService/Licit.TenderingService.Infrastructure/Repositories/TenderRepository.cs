@@ -29,26 +29,9 @@ public class TenderRepository : ITenderRepository
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
-    public async Task<Tender> CreateAsync(Tender tender)
-    {
-        _context.Tenders.Add(tender);
-        await _context.SaveChangesAsync();
-        return tender;
-    }
+    public void Add(Tender tender) => _context.Tenders.Add(tender);
 
-    public async Task UpdateAsync(Tender tender)
-    {
-        _context.Tenders.Update(tender);
-        await _context.SaveChangesAsync();
-    }
+    public void Update(Tender tender) => _context.Tenders.Update(tender);
 
-    public async Task DeleteAsync(Guid id)
-    {
-        var tender = await _context.Tenders.FindAsync(id);
-        if (tender is not null)
-        {
-            _context.Tenders.Remove(tender);
-            await _context.SaveChangesAsync();
-        }
-    }
+    public void Remove(Tender tender) => _context.Tenders.Remove(tender);
 }

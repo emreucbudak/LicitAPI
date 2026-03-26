@@ -5,7 +5,6 @@ using Licit.TenderingService.API.Middleware;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Infrastructure.Data;
-using Licit.TenderingService.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -21,8 +20,8 @@ var jwtAudience = builder.Configuration["JwtSettings:Audience"]!;
 builder.Services.AddDbContext<TenderingDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repositories
-builder.Services.AddScoped<ITenderRepository, TenderRepository>();
+// Unit of Work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(

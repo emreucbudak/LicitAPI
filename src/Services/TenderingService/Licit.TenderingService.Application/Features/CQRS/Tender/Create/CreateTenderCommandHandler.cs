@@ -5,7 +5,7 @@ using Licit.TenderingService.Application.Interfaces;
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 
 public class CreateTenderCommandHandler(
-    ITenderRepository tenderRepository,
+    IUnitOfWork unitOfWork,
     IValidator<CreateTenderCommandRequest> validator) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
 {
     public async Task<CreateTenderCommandResponse> Handle(CreateTenderCommandRequest request, CancellationToken cancellationToken)
@@ -29,17 +29,18 @@ public class CreateTenderCommandHandler(
                 tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
         }
 
-        var created = await tenderRepository.CreateAsync(tender);
+        unitOfWork.Tenders.Add(tender);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new CreateTenderCommandResponse(
-            created.Id,
-            created.Title,
-            created.Description,
-            created.StartingPrice,
-            created.StartDate,
-            created.EndDate,
-            created.Status.ToString(),
-            created.CreatedAt
+            tender.Id,
+            tender.Title,
+            tender.Description,
+            tender.StartingPrice,
+            tender.StartDate,
+            tender.EndDate,
+            tender.Status.ToString(),
+            tender.CreatedAt
         );
     }
 }

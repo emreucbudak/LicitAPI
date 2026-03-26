@@ -6,7 +6,7 @@ using Licit.TenderingService.Application.Interfaces;
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
 
 public class GetTenderByIdQueryHandler(
-    ITenderRepository tenderRepository,
+    IUnitOfWork unitOfWork,
     IValidator<GetTenderByIdQueryRequest> validator) : IRequestHandler<GetTenderByIdQueryRequest, GetTenderByIdQueryResponse>
 {
     public async Task<GetTenderByIdQueryResponse> Handle(GetTenderByIdQueryRequest request, CancellationToken cancellationToken)
@@ -15,7 +15,7 @@ public class GetTenderByIdQueryHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await tenderRepository.GetByIdAsync(request.Id)
+        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         return new GetTenderByIdQueryResponse(

@@ -7,7 +7,7 @@ using Licit.TenderingService.Application.Interfaces;
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Update;
 
 public class UpdateTenderCommandHandler(
-    ITenderRepository tenderRepository,
+    IUnitOfWork unitOfWork,
     IValidator<UpdateTenderCommandRequest> validator) : IRequestHandler<UpdateTenderCommandRequest, UpdateTenderCommandResponse>
 {
     public async Task<UpdateTenderCommandResponse> Handle(UpdateTenderCommandRequest request, CancellationToken cancellationToken)
@@ -16,7 +16,7 @@ public class UpdateTenderCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await tenderRepository.GetByIdAsync(request.Id)
+        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         try
@@ -35,7 +35,7 @@ public class UpdateTenderCommandHandler(
                 tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
         }
 
-        await tenderRepository.UpdateAsync(tender);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new UpdateTenderCommandResponse(
             tender.Id,
