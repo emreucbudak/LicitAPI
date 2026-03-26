@@ -1,4 +1,12 @@
 <Solution>
+  <Folder Name="/Docker/">
+    <File Path="docker-compose.yml" />
+    <File Path=".dockerignore" />
+    <File Path="src/Services/AuthService/Dockerfile" />
+    <File Path="src/Services/TenderingService/Dockerfile" />
+    <File Path="src/Services/WalletService/Dockerfile" />
+    <File Path="src/Services/MailService/Dockerfile" />
+  </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Services/" />
   <Folder Name="/src/Services/AuthService/">
