@@ -6,28 +6,24 @@
     <Project Path="src/Services/AuthService/Licit.AuthService.Application/Licit.AuthService.Application.csproj" />
     <Project Path="src/Services/AuthService/Licit.AuthService.Domain/Licit.AuthService.Domain.csproj" />
     <Project Path="src/Services/AuthService/Licit.AuthService.Infrastructure/Licit.AuthService.Infrastructure.csproj" />
-    <File Path="src/Services/AuthService/Dockerfile" />
   </Folder>
   <Folder Name="/src/Services/TenderingService/">
     <Project Path="src/Services/TenderingService/Licit.TenderingService.API/Licit.TenderingService.API.csproj" />
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Application/Licit.TenderingService.Application.csproj" />
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Domain/Licit.TenderingService.Domain.csproj" />
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Infrastructure/Licit.TenderingService.Infrastructure.csproj" />
-    <File Path="src/Services/TenderingService/Dockerfile" />
   </Folder>
   <Folder Name="/src/Services/WalletService/">
     <Project Path="src/Services/WalletService/Licit.WalletService.API/Licit.WalletService.API.csproj" />
     <Project Path="src/Services/WalletService/Licit.WalletService.Application/Licit.WalletService.Application.csproj" />
     <Project Path="src/Services/WalletService/Licit.WalletService.Domain/Licit.WalletService.Domain.csproj" />
     <Project Path="src/Services/WalletService/Licit.WalletService.Infrastructure/Licit.WalletService.Infrastructure.csproj" />
-    <File Path="src/Services/WalletService/Dockerfile" />
   </Folder>
   <Folder Name="/src/Services/MailService/">
     <Project Path="src/Services/MailService/Licit.MailService.API/Licit.MailService.API.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Application/Licit.MailService.Application.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Domain/Licit.MailService.Domain.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Infrastructure/Licit.MailService.Infrastructure.csproj" />
-    <File Path="src/Services/MailService/Dockerfile" />
   </Folder>
   <File Path="docker-compose.yml" />
   <File Path=".dockerignore" />
