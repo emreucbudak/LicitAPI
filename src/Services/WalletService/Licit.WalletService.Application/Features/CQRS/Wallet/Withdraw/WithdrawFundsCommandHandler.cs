@@ -1,48 +1,32 @@
 using FlashMediator;
+using FluentValidation;
+using Licit.WalletService.Application.Exceptions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
 using Licit.WalletService.Application.Interfaces;
-using Licit.WalletService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw;
 
 public class WithdrawFundsCommandHandler(
-    IWalletRepository walletRepository) : IRequestHandler<WithdrawFundsCommandRequest, WithdrawFundsCommandResponse>
+    IWalletRepository walletRepository,
+    IValidator<WithdrawFundsCommandRequest> validator) : IRequestHandler<WithdrawFundsCommandRequest, WithdrawFundsCommandResponse>
 {
     public async Task<WithdrawFundsCommandResponse> Handle(WithdrawFundsCommandRequest request, CancellationToken cancellationToken)
     {
-        if (request.Amount <= 0)
-            throw new InvalidOperationException("Çekilecek tutar sıfırdan büyük olmalıdır.");
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
 
         var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
-            ?? throw new KeyNotFoundException("Cüzdan bulunamadı.");
-
-        if (wallet.Balance < request.Amount)
-            throw new InvalidOperationException("Yetersiz bakiye.");
-
-        wallet.Balance -= request.Amount;
-        wallet.UpdatedAt = DateTime.UtcNow;
-
-        var transaction = new WalletTransaction
-        {
-            WalletId = wallet.Id,
-            Type = TransactionType.Withdraw,
-            Amount = request.Amount,
-            Description = "Para çekme",
-            BalanceAfter = wallet.Balance,
-            FrozenBalanceAfter = wallet.FrozenBalance
-        };
-
-        wallet.Transactions.Add(transaction);
+            ?? throw new WalletNotFoundException(request.UserId);
 
         try
         {
+            var transaction = wallet.Withdraw(request.Amount);
             await walletRepository.UpdateAsync(wallet);
+            return new WithdrawFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Eşzamanlılık hatası. Lütfen tekrar deneyin.");
-        }
-
-        return new WithdrawFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
+        catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }
+        catch (InvalidOperationException ex) when (ex.Message == "INSUFFICIENT_BALANCE") { throw new InsufficientBalanceException(); }
     }
 }

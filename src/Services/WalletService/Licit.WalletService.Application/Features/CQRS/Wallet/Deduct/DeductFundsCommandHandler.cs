@@ -1,49 +1,33 @@
 using FlashMediator;
+using FluentValidation;
+using Licit.WalletService.Application.Exceptions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Deduct.Exceptions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
 using Licit.WalletService.Application.Interfaces;
-using Licit.WalletService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Deduct;
 
 public class DeductFundsCommandHandler(
-    IWalletRepository walletRepository) : IRequestHandler<DeductFundsCommandRequest, DeductFundsCommandResponse>
+    IWalletRepository walletRepository,
+    IValidator<DeductFundsCommandRequest> validator) : IRequestHandler<DeductFundsCommandRequest, DeductFundsCommandResponse>
 {
     public async Task<DeductFundsCommandResponse> Handle(DeductFundsCommandRequest request, CancellationToken cancellationToken)
     {
-        if (request.Amount <= 0)
-            throw new InvalidOperationException("Kesilecek tutar sıfırdan büyük olmalıdır.");
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
 
         var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
-            ?? throw new KeyNotFoundException("Cüzdan bulunamadı.");
-
-        if (wallet.FrozenBalance < request.Amount)
-            throw new InvalidOperationException("Bloke edilmiş bakiye yetersiz. Kesim yapılamaz.");
-
-        wallet.FrozenBalance -= request.Amount;
-        wallet.UpdatedAt = DateTime.UtcNow;
-
-        var transaction = new WalletTransaction
-        {
-            WalletId = wallet.Id,
-            Type = TransactionType.Deduct,
-            Amount = request.Amount,
-            Description = request.Description ?? "İhale kazanıldı, tutar kesildi",
-            ReferenceId = request.ReferenceId,
-            BalanceAfter = wallet.Balance,
-            FrozenBalanceAfter = wallet.FrozenBalance
-        };
-
-        wallet.Transactions.Add(transaction);
+            ?? throw new WalletNotFoundException(request.UserId);
 
         try
         {
+            var transaction = wallet.Deduct(request.Amount, request.ReferenceId, request.Description);
             await walletRepository.UpdateAsync(wallet);
+            return new DeductFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Eşzamanlılık hatası. Lütfen tekrar deneyin.");
-        }
-
-        return new DeductFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
+        catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }
+        catch (InvalidOperationException ex) when (ex.Message == "INSUFFICIENT_FROZEN_BALANCE_FOR_DEDUCT") { throw new InsufficientFrozenBalanceForDeductException(); }
     }
 }
