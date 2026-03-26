@@ -1,5 +1,8 @@
-using Licit.AuthService.Application.DTOs;
-using Licit.AuthService.Application.Interfaces;
+using FlashMediator;
+using Licit.AuthService.Application.Features.CQRS.Auth.Login;
+using Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
+using Licit.AuthService.Application.Features.CQRS.Auth.Register;
+using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,38 +10,34 @@ namespace Licit.AuthService.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(IMediator mediator) : ControllerBase
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService) => _authService = authService;
-
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterCommandRequest request)
     {
-        var result = await _authService.RegisterAsync(request);
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginCommandRequest request)
     {
-        var result = await _authService.LoginAsync(request);
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommandRequest request)
     {
-        var result = await _authService.RefreshTokenAsync(request);
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
     [Authorize]
     [HttpPost("revoke")]
-    public async Task<IActionResult> Revoke([FromBody] RefreshTokenRequest request)
+    public async Task<IActionResult> Revoke([FromBody] RevokeTokenCommandRequest request)
     {
-        await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+        await mediator.Send(request);
         return NoContent();
     }
 
