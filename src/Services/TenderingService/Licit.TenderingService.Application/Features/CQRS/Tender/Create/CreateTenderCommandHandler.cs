@@ -1,43 +1,32 @@
 using FlashMediator;
+using FluentValidation;
 using Licit.TenderingService.Application.Interfaces;
-using Licit.TenderingService.Domain.Entities;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 
 public class CreateTenderCommandHandler(
-    ITenderRepository tenderRepository) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
+    ITenderRepository tenderRepository,
+    IValidator<CreateTenderCommandRequest> validator) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
 {
     public async Task<CreateTenderCommandResponse> Handle(CreateTenderCommandRequest request, CancellationToken cancellationToken)
     {
-        if (request.EndDate <= request.StartDate)
-            throw new InvalidOperationException("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
 
-        if (request.StartingPrice < 0)
-            throw new InvalidOperationException("Başlangıç fiyatı negatif olamaz.");
-
-        var tender = new Domain.Entities.Tender
-        {
-            Title = request.Title,
-            Description = request.Description,
-            StartingPrice = request.StartingPrice,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            CreatedByUserId = request.CreatedByUserId,
-            Status = TenderStatus.Draft
-        };
+        var tender = new Domain.Entities.Tender(
+            request.Title,
+            request.Description,
+            request.StartingPrice,
+            request.StartDate,
+            request.EndDate,
+            request.CreatedByUserId
+        );
 
         if (request.Rules is { Count: > 0 })
         {
             foreach (var rule in request.Rules)
-            {
-                tender.Rules.Add(new TenderRule
-                {
-                    TenderId = tender.Id,
-                    Title = rule.Title,
-                    Description = rule.Description,
-                    IsRequired = rule.IsRequired
-                });
-            }
+                tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
         }
 
         var created = await tenderRepository.CreateAsync(tender);

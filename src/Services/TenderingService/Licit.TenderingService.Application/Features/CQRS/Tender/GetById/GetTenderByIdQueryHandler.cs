@@ -1,15 +1,22 @@
 using FlashMediator;
+using FluentValidation;
+using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
 
 public class GetTenderByIdQueryHandler(
-    ITenderRepository tenderRepository) : IRequestHandler<GetTenderByIdQueryRequest, GetTenderByIdQueryResponse>
+    ITenderRepository tenderRepository,
+    IValidator<GetTenderByIdQueryRequest> validator) : IRequestHandler<GetTenderByIdQueryRequest, GetTenderByIdQueryResponse>
 {
     public async Task<GetTenderByIdQueryResponse> Handle(GetTenderByIdQueryRequest request, CancellationToken cancellationToken)
     {
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
         var tender = await tenderRepository.GetByIdAsync(request.Id)
-            ?? throw new KeyNotFoundException("İhale bulunamadı.");
+            ?? throw new TenderNotFoundException(request.Id);
 
         return new GetTenderByIdQueryResponse(
             tender.Id,
