@@ -1,15 +1,22 @@
 using FlashMediator;
+using FluentValidation;
+using Licit.WalletService.Application.Features.CQRS.Wallet.GetTransactions.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.GetTransactions;
 
 public class GetTransactionsQueryHandler(
-    IWalletRepository walletRepository) : IRequestHandler<GetTransactionsQueryRequest, GetTransactionsQueryResponse>
+    IWalletRepository walletRepository,
+    IValidator<GetTransactionsQueryRequest> validator) : IRequestHandler<GetTransactionsQueryRequest, GetTransactionsQueryResponse>
 {
     public async Task<GetTransactionsQueryResponse> Handle(GetTransactionsQueryRequest request, CancellationToken cancellationToken)
     {
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
         var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
-            ?? throw new KeyNotFoundException("Cüzdan bulunamadı.");
+            ?? throw new WalletNotFoundForTransactionsException(request.UserId);
 
         var transactions = await walletRepository.GetTransactionsByWalletIdAsync(wallet.Id, request.Page, request.PageSize);
 

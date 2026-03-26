@@ -1,5 +1,7 @@
 using System.Text;
 using FlashMediator;
+using FluentValidation;
+using Licit.WalletService.API.Middleware;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Infrastructure.Data;
@@ -25,6 +27,13 @@ builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
     typeof(DepositFundsCommandHandler).Assembly);
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(DepositFundsCommandHandler).Assembly);
+
+// GlobalExceptionHandler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Authentication (AuthService tarafından üretilen JWT'leri doğrular)
 builder.Services.AddAuthentication(options =>
@@ -52,6 +61,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
