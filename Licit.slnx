@@ -19,4 +19,10 @@
     <Project Path="src/Services/WalletService/Licit.WalletService.Domain/Licit.WalletService.Domain.csproj" />
     <Project Path="src/Services/WalletService/Licit.WalletService.Infrastructure/Licit.WalletService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Services/MailService/">
+    <Project Path="src/Services/MailService/Licit.MailService.API/Licit.MailService.API.csproj" />
+    <Project Path="src/Services/MailService/Licit.MailService.Application/Licit.MailService.Application.csproj" />
+    <Project Path="src/Services/MailService/Licit.MailService.Domain/Licit.MailService.Domain.csproj" />
+    <Project Path="src/Services/MailService/Licit.MailService.Infrastructure/Licit.MailService.Infrastructure.csproj" />
+  </Folder>
 </Solution>
