@@ -1,4 +1,4 @@
-namespace Licit.AuthService.Domain.Entities;
+namespace Licit.AuthService.Domain.Common;
 
 public interface IHasTimestamps
 {

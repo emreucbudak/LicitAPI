@@ -1,3 +1,5 @@
+using Licit.TenderingService.Domain.Common;
+
 namespace Licit.TenderingService.Domain.Entities;
 
 public class TenderRule : BaseEntity
