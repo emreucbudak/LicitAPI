@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw;
 
 public class WithdrawFundsCommandHandler(
-    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
     IValidator<WithdrawFundsCommandRequest> validator) : IRequestHandler<WithdrawFundsCommandRequest, WithdrawFundsCommandResponse>
 {
     public async Task<WithdrawFundsCommandResponse> Handle(WithdrawFundsCommandRequest request, CancellationToken cancellationToken)
@@ -17,13 +17,13 @@ public class WithdrawFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
+        var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
         try
         {
             var transaction = wallet.Withdraw(request.Amount);
-            await walletRepository.UpdateAsync(wallet);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new WithdrawFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Deduct;
 
 public class DeductFundsCommandHandler(
-    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
     IValidator<DeductFundsCommandRequest> validator) : IRequestHandler<DeductFundsCommandRequest, DeductFundsCommandResponse>
 {
     public async Task<DeductFundsCommandResponse> Handle(DeductFundsCommandRequest request, CancellationToken cancellationToken)
@@ -18,13 +18,13 @@ public class DeductFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
+        var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
         try
         {
             var transaction = wallet.Deduct(request.Amount, request.ReferenceId, request.Description);
-            await walletRepository.UpdateAsync(wallet);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new DeductFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }

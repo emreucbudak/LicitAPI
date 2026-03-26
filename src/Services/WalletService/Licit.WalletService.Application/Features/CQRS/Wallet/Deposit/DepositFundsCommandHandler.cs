@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
 
 public class DepositFundsCommandHandler(
-    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
     IValidator<DepositFundsCommandRequest> validator) : IRequestHandler<DepositFundsCommandRequest, DepositFundsCommandResponse>
 {
     public async Task<DepositFundsCommandResponse> Handle(DepositFundsCommandRequest request, CancellationToken cancellationToken)
@@ -16,19 +16,20 @@ public class DepositFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId);
+        var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId);
 
         if (wallet is null)
         {
             wallet = new Domain.Entities.Wallet(request.UserId);
-            wallet = await walletRepository.CreateAsync(wallet);
+            unitOfWork.Wallets.Add(wallet);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         var transaction = wallet.Deposit(request.Amount);
 
         try
         {
-            await walletRepository.UpdateAsync(wallet);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {
