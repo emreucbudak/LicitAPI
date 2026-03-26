@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Licit.AuthService.Domain.Entities;
 
-public class ApplicationUser : IdentityUser<Guid>
+public class ApplicationUser : IdentityUser<Guid>, IHasTimestamps
 {
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;

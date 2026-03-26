@@ -19,6 +19,7 @@ public class RegisterCommandHandler(
 
         var user = new ApplicationUser
         {
+            Id = Guid.CreateVersion7(),
             UserName = request.Email,
             Email = request.Email,
             FirstName = request.FirstName,
