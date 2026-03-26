@@ -1,5 +1,7 @@
 using System.Text;
 using FlashMediator;
+using FluentValidation;
+using Licit.AuthService.API.Middleware;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
 using Licit.AuthService.Application.Interfaces;
@@ -45,6 +47,13 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddFlashMediator(
     typeof(LoginCommandHandler).Assembly);
 
+// FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(LoginCommandHandler).Assembly);
+
+// GlobalExceptionHandler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 // Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -71,6 +80,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
