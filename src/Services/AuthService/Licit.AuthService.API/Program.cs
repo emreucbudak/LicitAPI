@@ -1,7 +1,8 @@
 using System.Text;
+using FlashMediator;
 using Licit.AuthService.Application.DTOs;
+using Licit.AuthService.Application.Features.CQRS.Auth.Login;
 using Licit.AuthService.Application.Interfaces;
-using Licit.AuthService.Application.Services;
 using Licit.AuthService.Domain.Entities;
 using Licit.AuthService.Infrastructure.Data;
 using Licit.AuthService.Infrastructure.Repositories;
@@ -36,11 +37,13 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Services
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
+
+// FlashMediator (CQRS)
+builder.Services.AddFlashMediator(
+    typeof(LoginCommandHandler).Assembly);
 
 // Authentication
 builder.Services.AddAuthentication(options =>

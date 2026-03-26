@@ -8,8 +8,6 @@ public class AuthDbContext : IdentityDbContext<ApplicationUser, ApplicationRole,
 {
     public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
 
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
