@@ -4,13 +4,80 @@ namespace Licit.TenderingService.Domain.Entities;
 
 public class Tender : BaseEntity
 {
-    public string Title { get; set; } = null!;
-    public string Description { get; set; } = null!;
-    public decimal StartingPrice { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public TenderStatus Status { get; set; } = TenderStatus.Draft;
-    public Guid CreatedByUserId { get; set; }
+    public string Title { get; private set; } = null!;
+    public string Description { get; private set; } = null!;
+    public decimal StartingPrice { get; private set; }
+    public DateTime StartDate { get; private set; }
+    public DateTime EndDate { get; private set; }
+    public TenderStatus Status { get; private set; } = TenderStatus.Draft;
+    public Guid CreatedByUserId { get; private set; }
 
-    public ICollection<TenderRule> Rules { get; set; } = new List<TenderRule>();
+    public ICollection<TenderRule> Rules { get; private set; } = new List<TenderRule>();
+
+    private Tender() { }
+
+    public Tender(string title, string description, decimal startingPrice,
+        DateTime startDate, DateTime endDate, Guid createdByUserId)
+    {
+        Title = title;
+        Description = description;
+        StartingPrice = startingPrice;
+        StartDate = startDate;
+        EndDate = endDate;
+        CreatedByUserId = createdByUserId;
+        Status = TenderStatus.Draft;
+    }
+
+    public void UpdateDetails(string title, string description, decimal startingPrice,
+        DateTime startDate, DateTime endDate)
+    {
+        if (Status != TenderStatus.Draft)
+            throw new InvalidOperationException("TENDER_NOT_EDITABLE");
+
+        Title = title;
+        Description = description;
+        StartingPrice = startingPrice;
+        StartDate = startDate;
+        EndDate = endDate;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddRule(string title, string description, bool isRequired)
+    {
+        Rules.Add(new TenderRule
+        {
+            TenderId = Id,
+            Title = title,
+            Description = description,
+            IsRequired = isRequired
+        });
+    }
+
+    public void ClearRules()
+    {
+        Rules.Clear();
+    }
+
+    public void ChangeStatus(TenderStatus newStatus)
+    {
+        var allowed = Status switch
+        {
+            TenderStatus.Draft => newStatus is TenderStatus.Active or TenderStatus.Cancelled,
+            TenderStatus.Active => newStatus is TenderStatus.Closed or TenderStatus.Cancelled,
+            TenderStatus.Closed => newStatus is TenderStatus.Completed,
+            _ => false
+        };
+
+        if (!allowed)
+            throw new InvalidOperationException($"STATUS_TRANSITION_INVALID:{Status}:{newStatus}");
+
+        Status = newStatus;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ValidateForDeletion()
+    {
+        if (Status == TenderStatus.Active)
+            throw new InvalidOperationException("ACTIVE_TENDER_DELETION");
+    }
 }

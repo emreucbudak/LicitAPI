@@ -1,19 +1,32 @@
 using FlashMediator;
+using FluentValidation;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Delete.Exceptions;
+using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
-using Licit.TenderingService.Domain.Entities;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
 
 public class DeleteTenderCommandHandler(
-    ITenderRepository tenderRepository) : IRequestHandler<DeleteTenderCommandRequest>
+    ITenderRepository tenderRepository,
+    IValidator<DeleteTenderCommandRequest> validator) : IRequestHandler<DeleteTenderCommandRequest>
 {
     public async Task Handle(DeleteTenderCommandRequest request, CancellationToken cancellationToken)
     {
-        var tender = await tenderRepository.GetByIdAsync(request.Id)
-            ?? throw new KeyNotFoundException("İhale bulunamadı.");
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
 
-        if (tender.Status == TenderStatus.Active)
-            throw new InvalidOperationException("Aktif bir ihale silinemez. Önce iptal edilmelidir.");
+        var tender = await tenderRepository.GetByIdAsync(request.Id)
+            ?? throw new TenderNotFoundException(request.Id);
+
+        try
+        {
+            tender.ValidateForDeletion();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "ACTIVE_TENDER_DELETION")
+        {
+            throw new ActiveTenderDeletionException();
+        }
 
         await tenderRepository.DeleteAsync(request.Id);
     }

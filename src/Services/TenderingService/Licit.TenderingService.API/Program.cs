@@ -1,5 +1,7 @@
 using System.Text;
 using FlashMediator;
+using FluentValidation;
+using Licit.TenderingService.API.Middleware;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Infrastructure.Data;
@@ -25,6 +27,13 @@ builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
     typeof(CreateTenderCommandHandler).Assembly);
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(CreateTenderCommandHandler).Assembly);
+
+// GlobalExceptionHandler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Authentication (AuthService tarafından üretilen JWT'leri doğrular)
 builder.Services.AddAuthentication(options =>
@@ -52,6 +61,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

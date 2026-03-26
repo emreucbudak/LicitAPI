@@ -1,43 +1,38 @@
 using FlashMediator;
+using FluentValidation;
+using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Update.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
-using Licit.TenderingService.Domain.Entities;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Update;
 
 public class UpdateTenderCommandHandler(
-    ITenderRepository tenderRepository) : IRequestHandler<UpdateTenderCommandRequest, UpdateTenderCommandResponse>
+    ITenderRepository tenderRepository,
+    IValidator<UpdateTenderCommandRequest> validator) : IRequestHandler<UpdateTenderCommandRequest, UpdateTenderCommandResponse>
 {
     public async Task<UpdateTenderCommandResponse> Handle(UpdateTenderCommandRequest request, CancellationToken cancellationToken)
     {
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
         var tender = await tenderRepository.GetByIdAsync(request.Id)
-            ?? throw new KeyNotFoundException("İhale bulunamadı.");
+            ?? throw new TenderNotFoundException(request.Id);
 
-        if (tender.Status != TenderStatus.Draft)
-            throw new InvalidOperationException("Sadece taslak durumundaki ihaleler güncellenebilir.");
-
-        if (request.EndDate <= request.StartDate)
-            throw new InvalidOperationException("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
-
-        tender.Title = request.Title;
-        tender.Description = request.Description;
-        tender.StartingPrice = request.StartingPrice;
-        tender.StartDate = request.StartDate;
-        tender.EndDate = request.EndDate;
-        tender.UpdatedAt = DateTime.UtcNow;
+        try
+        {
+            tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate);
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "TENDER_NOT_EDITABLE")
+        {
+            throw new TenderNotEditableException();
+        }
 
         if (request.Rules is not null)
         {
-            tender.Rules.Clear();
+            tender.ClearRules();
             foreach (var rule in request.Rules)
-            {
-                tender.Rules.Add(new TenderRule
-                {
-                    TenderId = tender.Id,
-                    Title = rule.Title,
-                    Description = rule.Description,
-                    IsRequired = rule.IsRequired
-                });
-            }
+                tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
         }
 
         await tenderRepository.UpdateAsync(tender);
