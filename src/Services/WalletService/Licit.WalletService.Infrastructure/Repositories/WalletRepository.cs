@@ -15,18 +15,9 @@ public class WalletRepository : IWalletRepository
         await _context.Wallets
             .FirstOrDefaultAsync(w => w.UserId == userId);
 
-    public async Task<Wallet> CreateAsync(Wallet wallet)
-    {
-        _context.Wallets.Add(wallet);
-        await _context.SaveChangesAsync();
-        return wallet;
-    }
+    public void Add(Wallet wallet) => _context.Wallets.Add(wallet);
 
-    public async Task UpdateAsync(Wallet wallet)
-    {
-        _context.Wallets.Update(wallet);
-        await _context.SaveChangesAsync();
-    }
+    public void Update(Wallet wallet) => _context.Wallets.Update(wallet);
 
     public async Task<IEnumerable<WalletTransaction>> GetTransactionsByWalletIdAsync(Guid walletId, int page, int pageSize) =>
         await _context.WalletTransactions

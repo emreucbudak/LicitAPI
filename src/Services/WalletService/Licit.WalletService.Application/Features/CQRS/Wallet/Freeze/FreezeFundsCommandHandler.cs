@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Freeze;
 
 public class FreezeFundsCommandHandler(
-    IWalletRepository walletRepository,
+    IUnitOfWork unitOfWork,
     IValidator<FreezeFundsCommandRequest> validator) : IRequestHandler<FreezeFundsCommandRequest, FreezeFundsCommandResponse>
 {
     public async Task<FreezeFundsCommandResponse> Handle(FreezeFundsCommandRequest request, CancellationToken cancellationToken)
@@ -18,13 +18,13 @@ public class FreezeFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
+        var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
         try
         {
             var transaction = wallet.Freeze(request.Amount, request.ReferenceId, request.Description);
-            await walletRepository.UpdateAsync(wallet);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new FreezeFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }

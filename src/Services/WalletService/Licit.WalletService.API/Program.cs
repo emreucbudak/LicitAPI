@@ -5,7 +5,6 @@ using Licit.WalletService.API.Middleware;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Infrastructure.Data;
-using Licit.WalletService.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -21,8 +20,8 @@ var jwtAudience = builder.Configuration["JwtSettings:Audience"]!;
 builder.Services.AddDbContext<WalletDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repositories
-builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+// Unit of Work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
