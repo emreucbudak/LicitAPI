@@ -25,6 +25,7 @@
     <Project Path="src/Services/MailService/Licit.MailService.Domain/Licit.MailService.Domain.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Infrastructure/Licit.MailService.Infrastructure.csproj" />
   </Folder>
-  <File Path="docker-compose.yml" />
-  <File Path=".dockerignore" />
+  <Folder Name="/docker/">
+    <File Path="docker/docker-compose.yml" />
+  </Folder>
 </Solution>

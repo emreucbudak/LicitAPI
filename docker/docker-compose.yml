@@ -20,7 +20,7 @@ services:
 
   auth-service:
     build:
-      context: .
+      context: ..
       dockerfile: src/Services/AuthService/Dockerfile
     container_name: licit-auth-service
     environment:
@@ -40,7 +40,7 @@ services:
 
   tendering-service:
     build:
-      context: .
+      context: ..
       dockerfile: src/Services/TenderingService/Dockerfile
     container_name: licit-tendering-service
     environment:
@@ -60,7 +60,7 @@ services:
 
   wallet-service:
     build:
-      context: .
+      context: ..
       dockerfile: src/Services/WalletService/Dockerfile
     container_name: licit-wallet-service
     environment:
@@ -80,7 +80,7 @@ services:
 
   mail-service:
     build:
-      context: .
+      context: ..
       dockerfile: src/Services/MailService/Dockerfile
     container_name: licit-mail-service
     environment:
