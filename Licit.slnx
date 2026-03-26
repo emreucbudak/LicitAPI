@@ -7,4 +7,10 @@
     <Project Path="src/Services/AuthService/Licit.AuthService.Domain/Licit.AuthService.Domain.csproj" />
     <Project Path="src/Services/AuthService/Licit.AuthService.Infrastructure/Licit.AuthService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Services/TenderingService/">
+    <Project Path="src/Services/TenderingService/Licit.TenderingService.API/Licit.TenderingService.API.csproj" />
+    <Project Path="src/Services/TenderingService/Licit.TenderingService.Application/Licit.TenderingService.Application.csproj" />
+    <Project Path="src/Services/TenderingService/Licit.TenderingService.Domain/Licit.TenderingService.Domain.csproj" />
+    <Project Path="src/Services/TenderingService/Licit.TenderingService.Infrastructure/Licit.TenderingService.Infrastructure.csproj" />
+  </Folder>
 </Solution>
