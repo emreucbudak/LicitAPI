@@ -8,7 +8,7 @@ using Licit.TenderingService.Domain.Entities;
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus;
 
 public class ChangeTenderStatusCommandHandler(
-    ITenderRepository tenderRepository,
+    IUnitOfWork unitOfWork,
     IValidator<ChangeTenderStatusCommandRequest> validator) : IRequestHandler<ChangeTenderStatusCommandRequest, ChangeTenderStatusCommandResponse>
 {
     public async Task<ChangeTenderStatusCommandResponse> Handle(ChangeTenderStatusCommandRequest request, CancellationToken cancellationToken)
@@ -17,7 +17,7 @@ public class ChangeTenderStatusCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await tenderRepository.GetByIdAsync(request.Id)
+        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         if (!Enum.TryParse<TenderStatus>(request.NewStatus, true, out var newStatus))
@@ -33,7 +33,7 @@ public class ChangeTenderStatusCommandHandler(
             throw new InvalidStatusTransitionException(parts[1], parts[2]);
         }
 
-        await tenderRepository.UpdateAsync(tender);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new ChangeTenderStatusCommandResponse(tender.Id, tender.Status.ToString(), tender.UpdatedAt);
     }

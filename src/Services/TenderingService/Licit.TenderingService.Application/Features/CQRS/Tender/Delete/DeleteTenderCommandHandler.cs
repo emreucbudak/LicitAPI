@@ -7,7 +7,7 @@ using Licit.TenderingService.Application.Interfaces;
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
 
 public class DeleteTenderCommandHandler(
-    ITenderRepository tenderRepository,
+    IUnitOfWork unitOfWork,
     IValidator<DeleteTenderCommandRequest> validator) : IRequestHandler<DeleteTenderCommandRequest>
 {
     public async Task Handle(DeleteTenderCommandRequest request, CancellationToken cancellationToken)
@@ -16,7 +16,7 @@ public class DeleteTenderCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await tenderRepository.GetByIdAsync(request.Id)
+        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         try
@@ -28,6 +28,7 @@ public class DeleteTenderCommandHandler(
             throw new ActiveTenderDeletionException();
         }
 
-        await tenderRepository.DeleteAsync(request.Id);
+        unitOfWork.Tenders.Remove(tender);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

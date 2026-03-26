@@ -4,11 +4,11 @@ using Licit.TenderingService.Application.Interfaces;
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
 
 public class GetAllTendersQueryHandler(
-    ITenderRepository tenderRepository) : IRequestHandler<GetAllTendersQueryRequest, GetAllTendersQueryResponse>
+    IUnitOfWork unitOfWork) : IRequestHandler<GetAllTendersQueryRequest, GetAllTendersQueryResponse>
 {
     public async Task<GetAllTendersQueryResponse> Handle(GetAllTendersQueryRequest request, CancellationToken cancellationToken)
     {
-        var tenders = await tenderRepository.GetAllAsync();
+        var tenders = await unitOfWork.Tenders.GetAllAsync();
 
         var dtos = tenders.Select(t => new TenderSummaryDto(
             t.Id,
