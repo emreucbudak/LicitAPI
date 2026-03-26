@@ -13,4 +13,10 @@
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Domain/Licit.TenderingService.Domain.csproj" />
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Infrastructure/Licit.TenderingService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Services/WalletService/">
+    <Project Path="src/Services/WalletService/Licit.WalletService.API/Licit.WalletService.API.csproj" />
+    <Project Path="src/Services/WalletService/Licit.WalletService.Application/Licit.WalletService.Application.csproj" />
+    <Project Path="src/Services/WalletService/Licit.WalletService.Domain/Licit.WalletService.Domain.csproj" />
+    <Project Path="src/Services/WalletService/Licit.WalletService.Infrastructure/Licit.WalletService.Infrastructure.csproj" />
+  </Folder>
 </Solution>
