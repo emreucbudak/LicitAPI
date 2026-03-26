@@ -1,4 +1,4 @@
-namespace Licit.WalletService.Domain.Entities;
+namespace Licit.TenderingService.Domain.Common;
 
 public abstract class BaseEntity
 {

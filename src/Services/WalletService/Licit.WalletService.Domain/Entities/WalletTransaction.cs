@@ -1,3 +1,5 @@
+using Licit.WalletService.Domain.Common;
+
 namespace Licit.WalletService.Domain.Entities;
 
 public class WalletTransaction : BaseEntity

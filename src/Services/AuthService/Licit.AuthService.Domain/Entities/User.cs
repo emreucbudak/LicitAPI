@@ -1,3 +1,4 @@
+using Licit.AuthService.Domain.Common;
 using Microsoft.AspNetCore.Identity;
 
 namespace Licit.AuthService.Domain.Entities;
