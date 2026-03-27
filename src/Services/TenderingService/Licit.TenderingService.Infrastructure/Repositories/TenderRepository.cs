@@ -14,17 +14,20 @@ public class TenderRepository : ITenderRepository
     public async Task<Tender?> GetByIdAsync(Guid id) =>
         await _context.Tenders
             .Include(t => t.Rules)
+            .Include(t => t.Category)
             .FirstOrDefaultAsync(t => t.Id == id);
 
     public async Task<IEnumerable<Tender>> GetAllAsync() =>
         await _context.Tenders
             .Include(t => t.Rules)
+            .Include(t => t.Category)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
     public async Task<IEnumerable<Tender>> GetByUserIdAsync(Guid userId) =>
         await _context.Tenders
             .Include(t => t.Rules)
+            .Include(t => t.Category)
             .Where(t => t.CreatedByUserId == userId)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();

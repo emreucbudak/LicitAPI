@@ -20,7 +20,8 @@ public class CreateTenderCommandHandler(
             request.StartingPrice,
             request.StartDate,
             request.EndDate,
-            request.CreatedByUserId
+            request.CreatedByUserId,
+            request.CategoryId
         );
 
         if (request.Rules is { Count: > 0 })
@@ -40,6 +41,7 @@ public class CreateTenderCommandHandler(
             tender.StartDate,
             tender.EndDate,
             tender.Status.ToString(),
+            tender.CategoryId,
             tender.CreatedAt
         );
     }

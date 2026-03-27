@@ -21,7 +21,7 @@ public class UpdateTenderCommandHandler(
 
         try
         {
-            tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate);
+            tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate, request.CategoryId);
         }
         catch (InvalidOperationException ex) when (ex.Message == "TENDER_NOT_EDITABLE")
         {
@@ -45,6 +45,7 @@ public class UpdateTenderCommandHandler(
             tender.StartDate,
             tender.EndDate,
             tender.Status.ToString(),
+            tender.CategoryId,
             tender.UpdatedAt
         );
     }

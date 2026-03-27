@@ -19,6 +19,8 @@ public class GetAllTendersQueryHandler(
             t.EndDate,
             t.Status.ToString(),
             t.CreatedByUserId,
+            t.CategoryId,
+            t.Category.Name,
             t.CreatedAt,
             t.Rules.Count
         )).ToList();

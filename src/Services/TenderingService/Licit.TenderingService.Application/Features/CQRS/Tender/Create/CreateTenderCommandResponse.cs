@@ -8,5 +8,6 @@ public record CreateTenderCommandResponse(
     DateTime StartDate,
     DateTime EndDate,
     string Status,
+    Guid CategoryId,
     DateTime CreatedAt
 );

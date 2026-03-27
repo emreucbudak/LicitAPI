@@ -22,5 +22,8 @@ public class UpdateTenderCommandValidator : AbstractValidator<UpdateTenderComman
 
         RuleFor(x => x.EndDate)
             .GreaterThan(x => x.StartDate).WithMessage("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
+
+        RuleFor(x => x.CategoryId)
+            .NotEmpty().WithMessage("Kategori belirtilmelidir.");
     }
 }

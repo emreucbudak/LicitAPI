@@ -11,13 +11,15 @@ public class Tender : BaseEntity
     public DateTime EndDate { get; private set; }
     public TenderStatus Status { get; private set; } = TenderStatus.Draft;
     public Guid CreatedByUserId { get; private set; }
+    public Guid CategoryId { get; private set; }
 
+    public Category Category { get; private set; } = null!;
     public ICollection<TenderRule> Rules { get; private set; } = new List<TenderRule>();
 
     private Tender() { }
 
     public Tender(string title, string description, decimal startingPrice,
-        DateTime startDate, DateTime endDate, Guid createdByUserId)
+        DateTime startDate, DateTime endDate, Guid createdByUserId, Guid categoryId)
     {
         Title = title;
         Description = description;
@@ -25,11 +27,12 @@ public class Tender : BaseEntity
         StartDate = startDate;
         EndDate = endDate;
         CreatedByUserId = createdByUserId;
+        CategoryId = categoryId;
         Status = TenderStatus.Draft;
     }
 
     public void UpdateDetails(string title, string description, decimal startingPrice,
-        DateTime startDate, DateTime endDate)
+        DateTime startDate, DateTime endDate, Guid categoryId)
     {
         if (Status != TenderStatus.Draft)
             throw new InvalidOperationException("TENDER_NOT_EDITABLE");
@@ -39,6 +42,7 @@ public class Tender : BaseEntity
         StartingPrice = startingPrice;
         StartDate = startDate;
         EndDate = endDate;
+        CategoryId = categoryId;
         UpdatedAt = DateTime.UtcNow;
     }
 

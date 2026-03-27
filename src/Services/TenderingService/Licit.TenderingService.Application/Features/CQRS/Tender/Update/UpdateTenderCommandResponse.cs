@@ -8,5 +8,6 @@ public record UpdateTenderCommandResponse(
     DateTime StartDate,
     DateTime EndDate,
     string Status,
+    Guid CategoryId,
     DateTime? UpdatedAt
 );

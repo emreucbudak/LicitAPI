@@ -26,5 +26,8 @@ public class CreateTenderCommandValidator : AbstractValidator<CreateTenderComman
 
         RuleFor(x => x.CreatedByUserId)
             .NotEmpty().WithMessage("Oluşturan kullanıcı kimliği belirtilmelidir.");
+
+        RuleFor(x => x.CategoryId)
+            .NotEmpty().WithMessage("Kategori belirtilmelidir.");
     }
 }
