@@ -9,6 +9,8 @@ public record GetTenderByIdQueryResponse(
     DateTime EndDate,
     string Status,
     Guid CreatedByUserId,
+    Guid CategoryId,
+    string CategoryName,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     List<TenderRuleDto> Rules

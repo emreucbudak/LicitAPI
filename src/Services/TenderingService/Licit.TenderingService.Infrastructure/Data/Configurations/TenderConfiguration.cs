@@ -33,5 +33,6 @@ public class TenderConfiguration : IEntityTypeConfiguration<Tender>
         builder.HasIndex(t => t.Status);
         builder.HasIndex(t => t.CreatedByUserId);
         builder.HasIndex(t => t.EndDate);
+        builder.HasIndex(t => t.CategoryId);
     }
 }

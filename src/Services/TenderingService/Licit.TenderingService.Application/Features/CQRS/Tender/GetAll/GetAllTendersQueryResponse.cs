@@ -13,6 +13,8 @@ public record TenderSummaryDto(
     DateTime EndDate,
     string Status,
     Guid CreatedByUserId,
+    Guid CategoryId,
+    string CategoryName,
     DateTime CreatedAt,
     int RuleCount
 );

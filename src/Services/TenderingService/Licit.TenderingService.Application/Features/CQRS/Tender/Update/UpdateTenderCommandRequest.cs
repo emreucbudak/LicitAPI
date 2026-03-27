@@ -10,5 +10,6 @@ public record UpdateTenderCommandRequest(
     decimal StartingPrice,
     DateTime StartDate,
     DateTime EndDate,
+    Guid CategoryId,
     List<CreateTenderRuleDto>? Rules
 ) : IRequest<UpdateTenderCommandResponse>;

@@ -42,6 +42,7 @@ public class TenderController(IMediator mediator) : ControllerBase
             request.StartDate,
             request.EndDate,
             userId,
+            request.CategoryId,
             request.Rules
         );
 
@@ -60,6 +61,7 @@ public class TenderController(IMediator mediator) : ControllerBase
             request.StartingPrice,
             request.StartDate,
             request.EndDate,
+            request.CategoryId,
             request.Rules
         );
 
@@ -99,6 +101,7 @@ public record CreateTenderRequest(
     decimal StartingPrice,
     DateTime StartDate,
     DateTime EndDate,
+    Guid CategoryId,
     List<CreateTenderRuleDto>? Rules
 );
 
@@ -108,6 +111,7 @@ public record UpdateTenderRequest(
     decimal StartingPrice,
     DateTime StartDate,
     DateTime EndDate,
+    Guid CategoryId,
     List<CreateTenderRuleDto>? Rules
 );
 

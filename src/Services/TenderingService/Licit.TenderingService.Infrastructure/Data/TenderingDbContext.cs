@@ -9,6 +9,7 @@ public class TenderingDbContext : DbContext
 
     public DbSet<Tender> Tenders => Set<Tender>();
     public DbSet<TenderRule> TenderRules => Set<TenderRule>();
+    public DbSet<Category> Categories => Set<Category>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
