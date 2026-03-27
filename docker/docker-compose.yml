@@ -78,6 +78,63 @@ services:
     networks:
       - licit-network
 
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    container_name: licit-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=licit
+      - RABBITMQ_DEFAULT_PASS=LicitDev2024!
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - licit-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:8.6-alpine
+    container_name: licit-redis
+    command: redis-server --requirepass LicitDev2024!
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - licit-network
+    healthcheck:
+      test: redis-cli -a LicitDev2024! ping | grep PONG
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  postgresql:
+    image: postgres:18.3
+    container_name: licit-postgresql
+    environment:
+      - POSTGRES_USER=licit
+      - POSTGRES_PASSWORD=LicitDev2024!
+      - POSTGRES_DB=LicitDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    networks:
+      - licit-network
+    healthcheck:
+      test: pg_isready -U licit -d LicitDb
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   mail-service:
     build:
       context: ..
