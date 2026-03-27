@@ -28,4 +28,9 @@
   <Folder Name="/docker/">
     <File Path="docker/docker-compose.yml" />
   </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Services/" />
+  <Folder Name="/tests/Services/TenderingService/">
+    <Project Path="tests/Services/TenderingService/Licit.TenderingService.UnitTests/Licit.TenderingService.UnitTests.csproj" />
+  </Folder>
 </Solution>
