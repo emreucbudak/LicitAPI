@@ -18,7 +18,7 @@ var jwtAudience = builder.Configuration["JwtSettings:Audience"]!;
 
 // Database
 builder.Services.AddDbContext<TenderingDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

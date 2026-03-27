@@ -1,22 +1,24 @@
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: licit-sqlserver
+  postgresql:
+    image: postgres:17
+    container_name: licit-postgresql
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=LicitDev2024!
+      - POSTGRES_USER=licit
+      - POSTGRES_PASSWORD=LicitDev2024!
+      - POSTGRES_DB=LicitDb
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - postgresql-data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     networks:
       - licit-network
     healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "LicitDev2024!" -C -Q "SELECT 1" || exit 1
+      test: pg_isready -U licit -d LicitDb
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 15s
 
   auth-service:
     build:
@@ -26,14 +28,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicitAuthDb;User Id=sa;Password=LicitDev2024!;TrustServerCertificate=true;
+      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitAuthDb;Username=licit;Password=LicitDev2024!
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
     ports:
       - "5122:8080"
     depends_on:
-      sqlserver:
+      postgresql:
         condition: service_healthy
     networks:
       - licit-network
@@ -46,14 +48,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicitTenderingDb;User Id=sa;Password=LicitDev2024!;TrustServerCertificate=true;
+      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitTenderingDb;Username=licit;Password=LicitDev2024!
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
     ports:
       - "5132:8080"
     depends_on:
-      sqlserver:
+      postgresql:
         condition: service_healthy
     networks:
       - licit-network
@@ -66,14 +68,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicitWalletDb;User Id=sa;Password=LicitDev2024!;TrustServerCertificate=true;
+      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitWalletDb;Username=licit;Password=LicitDev2024!
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
     ports:
       - "5142:8080"
     depends_on:
-      sqlserver:
+      postgresql:
         condition: service_healthy
     networks:
       - licit-network
@@ -115,26 +117,6 @@ services:
       retries: 5
       start_period: 10s
 
-  postgresql:
-    image: postgres:18.3
-    container_name: licit-postgresql
-    environment:
-      - POSTGRES_USER=licit
-      - POSTGRES_PASSWORD=LicitDev2024!
-      - POSTGRES_DB=LicitDb
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgresql-data:/var/lib/postgresql/data
-    networks:
-      - licit-network
-    healthcheck:
-      test: pg_isready -U licit -d LicitDb
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-
   mail-service:
     build:
       context: ..
@@ -143,7 +125,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicitMailDb;User Id=sa;Password=LicitDev2024!;TrustServerCertificate=true;
+      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitMailDb;Username=licit;Password=LicitDev2024!
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
@@ -156,13 +138,15 @@ services:
     ports:
       - "5152:8080"
     depends_on:
-      sqlserver:
+      postgresql:
         condition: service_healthy
     networks:
       - licit-network
 
 volumes:
-  sqlserver-data:
+  postgresql-data:
+  rabbitmq-data:
+  redis-data:
 
 networks:
   licit-network:

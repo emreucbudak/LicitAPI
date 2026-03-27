@@ -24,7 +24,7 @@ builder.Services.AddSingleton(smtpSettings);
 
 // Database
 builder.Services.AddDbContext<MailDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
