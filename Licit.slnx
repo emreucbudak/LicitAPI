@@ -33,4 +33,13 @@
   <Folder Name="/tests/Services/TenderingService/">
     <Project Path="tests/Services/TenderingService/Licit.TenderingService.UnitTests/Licit.TenderingService.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tests/Services/AuthService/">
+    <Project Path="tests/Services/AuthService/Licit.AuthService.UnitTests/Licit.AuthService.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/WalletService/">
+    <Project Path="tests/Services/WalletService/Licit.WalletService.UnitTests/Licit.WalletService.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/MailService/">
+    <Project Path="tests/Services/MailService/Licit.MailService.UnitTests/Licit.MailService.UnitTests.csproj" />
+  </Folder>
 </Solution>
