@@ -17,15 +17,22 @@ public class TenderRepository : ITenderRepository
             .Include(t => t.Category)
             .FirstOrDefaultAsync(t => t.Id == id);
 
-    public async Task<IEnumerable<Tender>> GetAllAsync() =>
+    public async Task<IEnumerable<Tender>> GetAllAsync(int page, int pageSize) =>
         await _context.Tenders
+            .AsNoTracking()
             .Include(t => t.Rules)
             .Include(t => t.Category)
             .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+    public async Task<int> GetCountAsync() =>
+        await _context.Tenders.CountAsync();
 
     public async Task<IEnumerable<Tender>> GetByUserIdAsync(Guid userId) =>
         await _context.Tenders
+            .AsNoTracking()
             .Include(t => t.Rules)
             .Include(t => t.Category)
             .Where(t => t.CreatedByUserId == userId)

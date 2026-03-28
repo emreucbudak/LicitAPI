@@ -8,4 +8,5 @@ public interface IWalletRepository
     void Add(Wallet wallet);
     void Update(Wallet wallet);
     Task<IEnumerable<WalletTransaction>> GetTransactionsByWalletIdAsync(Guid walletId, int page, int pageSize);
+    Task<int> GetTransactionCountByWalletIdAsync(Guid walletId);
 }

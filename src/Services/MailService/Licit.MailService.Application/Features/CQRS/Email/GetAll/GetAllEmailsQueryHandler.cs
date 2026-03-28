@@ -14,6 +14,7 @@ public class GetAllEmailsQueryHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
+        var totalCount = await unitOfWork.Emails.GetCountAsync();
         var emails = await unitOfWork.Emails.GetAllAsync(request.Page, request.PageSize);
 
         var dtos = emails.Select(e => new EmailSummaryDto(
@@ -25,6 +26,10 @@ public class GetAllEmailsQueryHandler(
             e.CreatedAt
         )).ToList();
 
-        return new GetAllEmailsQueryResponse(dtos);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
+
+        return new GetAllEmailsQueryResponse(
+            dtos, totalCount, request.Page, request.PageSize,
+            totalPages, request.Page < totalPages, request.Page > 1);
     }
 }

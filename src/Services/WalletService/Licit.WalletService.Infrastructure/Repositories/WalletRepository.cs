@@ -21,9 +21,13 @@ public class WalletRepository : IWalletRepository
 
     public async Task<IEnumerable<WalletTransaction>> GetTransactionsByWalletIdAsync(Guid walletId, int page, int pageSize) =>
         await _context.WalletTransactions
+            .AsNoTracking()
             .Where(t => t.WalletId == walletId)
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+
+    public async Task<int> GetTransactionCountByWalletIdAsync(Guid walletId) =>
+        await _context.WalletTransactions.CountAsync(t => t.WalletId == walletId);
 }

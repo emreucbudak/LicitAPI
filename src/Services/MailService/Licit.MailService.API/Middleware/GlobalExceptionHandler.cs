@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Diagnostics;
 
 namespace Licit.MailService.API.Middleware;
 
-public class GlobalExceptionHandler : IExceptionHandler
+public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
@@ -15,11 +15,17 @@ public class GlobalExceptionHandler : IExceptionHandler
             _ => (500, "Beklenmeyen bir hata oluştu.")
         };
 
+        if (statusCode >= 500)
+            logger.LogError(exception, "Sunucu hatası oluştu. TraceId: {TraceId}", httpContext.TraceIdentifier);
+        else if (exception is not ValidationException)
+            logger.LogWarning("İş kuralı hatası: {Message} TraceId: {TraceId}", message, httpContext.TraceIdentifier);
+
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(new
         {
             error = message,
-            statusCode
+            statusCode,
+            traceId = httpContext.TraceIdentifier
         }, cancellationToken);
 
         return true;

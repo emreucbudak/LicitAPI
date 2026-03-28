@@ -18,6 +18,7 @@ public class GetTransactionsQueryHandler(
         var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundForTransactionsException(request.UserId);
 
+        var totalCount = await unitOfWork.Wallets.GetTransactionCountByWalletIdAsync(wallet.Id);
         var transactions = await unitOfWork.Wallets.GetTransactionsByWalletIdAsync(wallet.Id, request.Page, request.PageSize);
 
         var dtos = transactions.Select(t => new TransactionDto(
@@ -31,6 +32,10 @@ public class GetTransactionsQueryHandler(
             t.CreatedAt
         )).ToList();
 
-        return new GetTransactionsQueryResponse(dtos);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
+
+        return new GetTransactionsQueryResponse(
+            dtos, totalCount, request.Page, request.PageSize,
+            totalPages, request.Page < totalPages, request.Page > 1);
     }
 }

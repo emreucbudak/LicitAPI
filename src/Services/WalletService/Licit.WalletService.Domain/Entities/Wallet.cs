@@ -1,4 +1,5 @@
 using Licit.WalletService.Domain.Common;
+using Licit.WalletService.Domain.Exceptions;
 
 namespace Licit.WalletService.Domain.Entities;
 
@@ -23,7 +24,7 @@ public class Wallet : BaseEntity
     public WalletTransaction Deposit(decimal amount)
     {
         if (amount <= 0)
-            throw new InvalidOperationException("INVALID_DEPOSIT_AMOUNT");
+            throw new InvalidAmountException("Deposit");
 
         Balance += amount;
         UpdatedAt = DateTime.UtcNow;
@@ -37,9 +38,9 @@ public class Wallet : BaseEntity
     public WalletTransaction Withdraw(decimal amount)
     {
         if (amount <= 0)
-            throw new InvalidOperationException("INVALID_WITHDRAW_AMOUNT");
+            throw new InvalidAmountException("Withdraw");
         if (Balance < amount)
-            throw new InvalidOperationException("INSUFFICIENT_BALANCE");
+            throw new InsufficientBalanceException();
 
         Balance -= amount;
         UpdatedAt = DateTime.UtcNow;
@@ -53,9 +54,9 @@ public class Wallet : BaseEntity
     public WalletTransaction Freeze(decimal amount, Guid referenceId, string? description)
     {
         if (amount <= 0)
-            throw new InvalidOperationException("INVALID_FREEZE_AMOUNT");
+            throw new InvalidAmountException("Freeze");
         if (Balance < amount)
-            throw new InvalidOperationException("INSUFFICIENT_BALANCE_FOR_FREEZE");
+            throw new InsufficientBalanceException();
 
         Balance -= amount;
         FrozenBalance += amount;
@@ -70,9 +71,9 @@ public class Wallet : BaseEntity
     public WalletTransaction Unfreeze(decimal amount, Guid referenceId, string? description)
     {
         if (amount <= 0)
-            throw new InvalidOperationException("INVALID_UNFREEZE_AMOUNT");
+            throw new InvalidAmountException("Unfreeze");
         if (FrozenBalance < amount)
-            throw new InvalidOperationException("INSUFFICIENT_FROZEN_BALANCE");
+            throw new InsufficientFrozenBalanceException();
 
         FrozenBalance -= amount;
         Balance += amount;
@@ -87,9 +88,9 @@ public class Wallet : BaseEntity
     public WalletTransaction Deduct(decimal amount, Guid referenceId, string? description)
     {
         if (amount <= 0)
-            throw new InvalidOperationException("INVALID_DEDUCT_AMOUNT");
+            throw new InvalidAmountException("Deduct");
         if (FrozenBalance < amount)
-            throw new InvalidOperationException("INSUFFICIENT_FROZEN_BALANCE_FOR_DEDUCT");
+            throw new InsufficientFrozenBalanceException();
 
         FrozenBalance -= amount;
         UpdatedAt = DateTime.UtcNow;

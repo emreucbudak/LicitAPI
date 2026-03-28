@@ -52,10 +52,19 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
+      - Redis__ConnectionString=redis:6379,password=LicitDev2024!
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=licit
+      - RabbitMq__Password=LicitDev2024!
     ports:
       - "5132:8080"
     depends_on:
       postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - licit-network
@@ -135,10 +144,16 @@ services:
       - SmtpSettings__Password=${MAILTRAP_PASSWORD:-password}
       - SmtpSettings__FromEmail=noreply@licit.com
       - SmtpSettings__FromName=Licit
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=licit
+      - RabbitMq__Password=LicitDev2024!
     ports:
       - "5152:8080"
     depends_on:
       postgresql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - licit-network

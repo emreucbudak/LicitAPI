@@ -27,6 +27,5 @@ public class WithdrawFundsCommandHandler(
             return new WithdrawFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }
-        catch (InvalidOperationException ex) when (ex.Message == "INSUFFICIENT_BALANCE") { throw new InsufficientBalanceException(); }
     }
 }

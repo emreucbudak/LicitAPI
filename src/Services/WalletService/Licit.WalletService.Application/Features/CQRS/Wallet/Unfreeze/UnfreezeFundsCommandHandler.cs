@@ -28,6 +28,5 @@ public class UnfreezeFundsCommandHandler(
             return new UnfreezeFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }
-        catch (InvalidOperationException ex) when (ex.Message == "INSUFFICIENT_FROZEN_BALANCE") { throw new InsufficientFrozenBalanceException(); }
     }
 }

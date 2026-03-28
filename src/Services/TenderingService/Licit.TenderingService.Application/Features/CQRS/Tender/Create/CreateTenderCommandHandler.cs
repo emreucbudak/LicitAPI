@@ -6,7 +6,8 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 
 public class CreateTenderCommandHandler(
     IUnitOfWork unitOfWork,
-    IValidator<CreateTenderCommandRequest> validator) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
+    IValidator<CreateTenderCommandRequest> validator,
+    ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
 {
     public async Task<CreateTenderCommandResponse> Handle(CreateTenderCommandRequest request, CancellationToken cancellationToken)
     {
@@ -32,6 +33,7 @@ public class CreateTenderCommandHandler(
 
         unitOfWork.Tenders.Add(tender);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await cacheInvalidator.InvalidateAsync(cancellationToken);
 
         return new CreateTenderCommandResponse(
             tender.Id,

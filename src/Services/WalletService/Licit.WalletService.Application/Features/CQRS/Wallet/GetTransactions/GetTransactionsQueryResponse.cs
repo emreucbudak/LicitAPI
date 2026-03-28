@@ -1,7 +1,13 @@
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.GetTransactions;
 
 public record GetTransactionsQueryResponse(
-    List<TransactionDto> Transactions
+    List<TransactionDto> Transactions,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages,
+    bool HasNextPage,
+    bool HasPreviousPage
 );
 
 public record TransactionDto(

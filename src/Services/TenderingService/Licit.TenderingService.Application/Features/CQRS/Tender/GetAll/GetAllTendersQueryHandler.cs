@@ -8,7 +8,8 @@ public class GetAllTendersQueryHandler(
 {
     public async Task<GetAllTendersQueryResponse> Handle(GetAllTendersQueryRequest request, CancellationToken cancellationToken)
     {
-        var tenders = await unitOfWork.Tenders.GetAllAsync();
+        var totalCount = await unitOfWork.Tenders.GetCountAsync();
+        var tenders = await unitOfWork.Tenders.GetAllAsync(request.Page, request.PageSize);
 
         var dtos = tenders.Select(t => new TenderSummaryDto(
             t.Id,
@@ -25,6 +26,10 @@ public class GetAllTendersQueryHandler(
             t.Rules.Count
         )).ToList();
 
-        return new GetAllTendersQueryResponse(dtos);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
+
+        return new GetAllTendersQueryResponse(
+            dtos, totalCount, request.Page, request.PageSize,
+            totalPages, request.Page < totalPages, request.Page > 1);
     }
 }

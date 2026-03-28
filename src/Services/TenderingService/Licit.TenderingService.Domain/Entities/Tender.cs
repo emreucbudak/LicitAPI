@@ -1,4 +1,5 @@
 using Licit.TenderingService.Domain.Common;
+using Licit.TenderingService.Domain.Exceptions;
 
 namespace Licit.TenderingService.Domain.Entities;
 
@@ -35,7 +36,7 @@ public class Tender : BaseEntity
         DateTime startDate, DateTime endDate, Guid categoryId)
     {
         if (Status != TenderStatus.Draft)
-            throw new InvalidOperationException("TENDER_NOT_EDITABLE");
+            throw new TenderNotEditableException();
 
         Title = title;
         Description = description;
@@ -73,7 +74,7 @@ public class Tender : BaseEntity
         };
 
         if (!allowed)
-            throw new InvalidOperationException($"STATUS_TRANSITION_INVALID:{Status}:{newStatus}");
+            throw new InvalidStatusTransitionException(Status.ToString(), newStatus.ToString());
 
         Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
@@ -82,6 +83,6 @@ public class Tender : BaseEntity
     public void ValidateForDeletion()
     {
         if (Status == TenderStatus.Active)
-            throw new InvalidOperationException("ACTIVE_TENDER_DELETION");
+            throw new ActiveTenderDeletionException();
     }
 }

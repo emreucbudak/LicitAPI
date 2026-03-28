@@ -12,14 +12,18 @@ public class EmailRepository : IEmailRepository
     public EmailRepository(MailDbContext context) => _context = context;
 
     public async Task<EmailMessage?> GetByIdAsync(Guid id) =>
-        await _context.EmailMessages.FirstOrDefaultAsync(e => e.Id == id);
+        await _context.EmailMessages.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
 
     public async Task<IEnumerable<EmailMessage>> GetAllAsync(int page, int pageSize) =>
         await _context.EmailMessages
+            .AsNoTracking()
             .OrderByDescending(e => e.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+
+    public async Task<int> GetCountAsync() =>
+        await _context.EmailMessages.CountAsync();
 
     public void Add(EmailMessage email) => _context.EmailMessages.Add(email);
 

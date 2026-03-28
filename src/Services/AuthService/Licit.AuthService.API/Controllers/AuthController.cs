@@ -5,6 +5,7 @@ using Licit.AuthService.Application.Features.CQRS.Auth.Register;
 using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Licit.AuthService.API.Controllers;
 
@@ -12,6 +13,7 @@ namespace Licit.AuthService.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController(IMediator mediator) : ControllerBase
 {
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommandRequest request)
     {
@@ -19,6 +21,7 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommandRequest request)
     {

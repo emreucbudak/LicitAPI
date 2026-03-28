@@ -1,6 +1,5 @@
 using FlashMediator;
 using FluentValidation;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Delete.Exceptions;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 
@@ -8,7 +7,8 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
 
 public class DeleteTenderCommandHandler(
     IUnitOfWork unitOfWork,
-    IValidator<DeleteTenderCommandRequest> validator) : IRequestHandler<DeleteTenderCommandRequest>
+    IValidator<DeleteTenderCommandRequest> validator,
+    ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<DeleteTenderCommandRequest>
 {
     public async Task Handle(DeleteTenderCommandRequest request, CancellationToken cancellationToken)
     {
@@ -19,16 +19,10 @@ public class DeleteTenderCommandHandler(
         var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
-        try
-        {
-            tender.ValidateForDeletion();
-        }
-        catch (InvalidOperationException ex) when (ex.Message == "ACTIVE_TENDER_DELETION")
-        {
-            throw new ActiveTenderDeletionException();
-        }
+        tender.ValidateForDeletion();
 
         unitOfWork.Tenders.Remove(tender);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await cacheInvalidator.InvalidateAsync(cancellationToken);
     }
 }

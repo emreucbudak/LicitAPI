@@ -1,14 +1,15 @@
 using FlashMediator;
 using FluentValidation;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Update.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
+using Licit.TenderingService.Domain.Exceptions;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Update;
 
 public class UpdateTenderCommandHandler(
     IUnitOfWork unitOfWork,
-    IValidator<UpdateTenderCommandRequest> validator) : IRequestHandler<UpdateTenderCommandRequest, UpdateTenderCommandResponse>
+    IValidator<UpdateTenderCommandRequest> validator,
+    ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<UpdateTenderCommandRequest, UpdateTenderCommandResponse>
 {
     public async Task<UpdateTenderCommandResponse> Handle(UpdateTenderCommandRequest request, CancellationToken cancellationToken)
     {
@@ -19,14 +20,7 @@ public class UpdateTenderCommandHandler(
         var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
-        try
-        {
-            tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate, request.CategoryId);
-        }
-        catch (InvalidOperationException ex) when (ex.Message == "TENDER_NOT_EDITABLE")
-        {
-            throw new TenderNotEditableException();
-        }
+        tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate, request.CategoryId);
 
         if (request.Rules is not null)
         {
@@ -36,6 +30,7 @@ public class UpdateTenderCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await cacheInvalidator.InvalidateAsync(cancellationToken);
 
         return new UpdateTenderCommandResponse(
             tender.Id,

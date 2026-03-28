@@ -4,12 +4,15 @@ using Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus.Excep
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
+using DomainExceptions = Licit.TenderingService.Domain.Exceptions;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus;
 
 public class ChangeTenderStatusCommandHandler(
     IUnitOfWork unitOfWork,
-    IValidator<ChangeTenderStatusCommandRequest> validator) : IRequestHandler<ChangeTenderStatusCommandRequest, ChangeTenderStatusCommandResponse>
+    IValidator<ChangeTenderStatusCommandRequest> validator,
+    ITenderCacheInvalidator cacheInvalidator,
+    IEventPublisher eventPublisher) : IRequestHandler<ChangeTenderStatusCommandRequest, ChangeTenderStatusCommandResponse>
 {
     public async Task<ChangeTenderStatusCommandResponse> Handle(ChangeTenderStatusCommandRequest request, CancellationToken cancellationToken)
     {
@@ -27,13 +30,14 @@ public class ChangeTenderStatusCommandHandler(
         {
             tender.ChangeStatus(newStatus);
         }
-        catch (InvalidOperationException ex) when (ex.Message.StartsWith("STATUS_TRANSITION_INVALID"))
+        catch (DomainExceptions.InvalidStatusTransitionException ex)
         {
-            var parts = ex.Message.Split(':');
-            throw new InvalidStatusTransitionException(parts[1], parts[2]);
+            throw new InvalidStatusTransitionException(ex.FromStatus, ex.ToStatus);
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await cacheInvalidator.InvalidateAsync(cancellationToken);
+        await eventPublisher.PublishTenderStatusChangedAsync(tender.Id, tender.Title, tender.Status.ToString(), cancellationToken);
 
         return new ChangeTenderStatusCommandResponse(tender.Id, tender.Status.ToString(), tender.UpdatedAt);
     }
