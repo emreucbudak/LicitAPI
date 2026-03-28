@@ -9,8 +9,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 // JWT Settings
 var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
@@ -102,6 +107,7 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment())
 {

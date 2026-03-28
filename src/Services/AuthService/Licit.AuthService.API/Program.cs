@@ -1,5 +1,4 @@
 using System.Text;
-using System.Threading.RateLimiting;
 using FlashMediator;
 using FluentValidation;
 using Licit.AuthService.API.Middleware;
@@ -16,8 +15,15 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using RedisRateLimiting;
+using Serilog;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 // JWT Settings (Options Pattern ile doğrulama)
 builder.Services.AddOptions<JwtSettings>()
@@ -125,21 +131,24 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgresql");
 
-// Rate Limiting
+// Redis Rate Limiting (distributed)
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379,password=LicitDev2024!";
+var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = 429;
-    options.AddFixedWindowLimiter("auth", limiter =>
+    options.AddRedisSlidingWindowLimiter("auth", limiterOptions =>
     {
-        limiter.PermitLimit = 10;
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
+        limiterOptions.ConnectionMultiplexerFactory = () => redisConnection;
+        limiterOptions.PermitLimit = 10;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
     });
 });
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment())
 {

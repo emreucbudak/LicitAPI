@@ -32,10 +32,13 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
+      - Redis__ConnectionString=redis:6379,password=LicitDev2024!
     ports:
       - "5122:8080"
     depends_on:
       postgresql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - licit-network
