@@ -15,9 +15,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using RedisRateLimiting;
 using Serilog;
-using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -131,17 +129,15 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgresql");
 
-// Redis Rate Limiting (distributed)
-var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
+// Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = 429;
-    options.AddRedisSlidingWindowLimiter("auth", limiterOptions =>
+    options.AddSlidingWindowLimiter("auth", limiterOptions =>
     {
-        limiterOptions.ConnectionMultiplexerFactory = () => redisConnection;
         limiterOptions.PermitLimit = 10;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.SegmentsPerWindow = 6;
     });
 });
 
