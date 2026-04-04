@@ -1,4 +1,5 @@
 using FlashMediator;
+using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
 using Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register;
@@ -48,15 +49,16 @@ public class AuthController(IMediator mediator) : ControllerBase
     [HttpGet("me")]
     public IActionResult Me()
     {
-        return Ok(new
-        {
-            Id = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        var profile = new UserProfileDto(
+            Id: User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                  ?? User.FindFirst("sub")?.Value,
-            Email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            Email: User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
                     ?? User.FindFirst("email")?.Value,
-            Role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value,
-            FirstName = User.FindFirst("firstName")?.Value,
-            LastName = User.FindFirst("lastName")?.Value
-        });
+            Role: User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value,
+            FirstName: User.FindFirst("firstName")?.Value,
+            LastName: User.FindFirst("lastName")?.Value
+        );
+
+        return Ok(profile);
     }
 }

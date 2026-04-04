@@ -11,5 +11,6 @@ public record UpdateTenderCommandRequest(
     DateTime StartDate,
     DateTime EndDate,
     Guid CategoryId,
-    List<CreateTenderRuleDto>? Rules
+    List<CreateTenderRuleDto>? Rules,
+    Guid UserId
 ) : IRequest<UpdateTenderCommandResponse>;

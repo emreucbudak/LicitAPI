@@ -1,5 +1,6 @@
 using FlashMediator;
 using FluentValidation;
+using Licit.TenderingService.Application.Exceptions;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 
@@ -18,6 +19,9 @@ public class DeleteTenderCommandHandler(
 
         var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
+
+        if (tender.CreatedByUserId != request.UserId)
+            throw new ForbiddenException("Bu ihaleyi yalnızca sahibi silebilir.");
 
         tender.ValidateForDeletion();
 

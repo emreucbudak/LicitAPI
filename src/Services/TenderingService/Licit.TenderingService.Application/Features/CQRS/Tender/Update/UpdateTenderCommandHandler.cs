@@ -1,5 +1,6 @@
 using FlashMediator;
 using FluentValidation;
+using Licit.TenderingService.Application.Exceptions;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Exceptions;
@@ -19,6 +20,9 @@ public class UpdateTenderCommandHandler(
 
         var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
+
+        if (tender.CreatedByUserId != request.UserId)
+            throw new ForbiddenException("Bu ihaleyi yalnızca sahibi güncelleyebilir.");
 
         tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate, request.CategoryId);
 

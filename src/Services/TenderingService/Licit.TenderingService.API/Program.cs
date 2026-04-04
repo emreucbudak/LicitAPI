@@ -49,11 +49,12 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITenderCacheInvalidator, TenderCacheInvalidator>();
 
 // RabbitMQ Event Publisher
-builder.Services.AddSingleton<IEventPublisher>(sp =>
+builder.Services.AddSingleton(sp =>
     RabbitMqEventPublisher.CreateAsync(
         sp.GetRequiredService<IConfiguration>(),
         sp.GetRequiredService<ILogger<RabbitMqEventPublisher>>()
     ).GetAwaiter().GetResult());
+builder.Services.AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<RabbitMqEventPublisher>());
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
@@ -116,7 +117,7 @@ builder.Services.AddSwaggerGen(options =>
 // Redis Cache
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379,password=LicitDev2024!";
+    options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
     options.InstanceName = "Tendering:";
 });
 
