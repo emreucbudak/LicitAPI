@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: |
+          for csproj in $(find src tests -name '*.csproj'); do
+            dotnet restore "$csproj"
+          done
+
+      - name: Build all service projects
+        run: |
+          for csproj in $(find src -name '*.csproj'); do
+            echo "Building $csproj"
+            dotnet build "$csproj" --no-restore --configuration Release
+          done
+
+      - name: Build all test projects
+        run: |
+          for csproj in $(find tests -name '*.csproj'); do
+            echo "Building $csproj"
+            dotnet build "$csproj" --no-restore --configuration Release
+          done
+
+      - name: Run tests with coverage
+        run: |
+          for csproj in $(find tests -name '*.csproj'); do
+            echo "Testing $csproj"
+            dotnet test "$csproj" \
+              --no-build \
+              --configuration Release \
+              --logger "trx" \
+              --collect:"XPlat Code Coverage" \
+              --results-directory ./TestResults
+          done
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults
+          retention-days: 30
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: ./TestResults/**/coverage.cobertura.xml
+          retention-days: 30
