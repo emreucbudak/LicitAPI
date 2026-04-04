@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Licit.WalletService.Domain.Entities;
+using Licit.WalletService.Domain.Exceptions;
 using Licit.WalletService.UnitTests.Common;
 
 namespace Licit.WalletService.UnitTests.Domain.Entities;
@@ -64,7 +65,7 @@ public class WalletTests
 
         var act = () => wallet.Deposit(amount);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INVALID_DEPOSIT_AMOUNT");
+        act.Should().Throw<InvalidAmountException>();
     }
 
     #endregion
@@ -92,7 +93,7 @@ public class WalletTests
 
         var act = () => wallet.Withdraw(amount);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INVALID_WITHDRAW_AMOUNT");
+        act.Should().Throw<InvalidAmountException>();
     }
 
     [Fact]
@@ -102,7 +103,7 @@ public class WalletTests
 
         var act = () => wallet.Withdraw(200m);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INSUFFICIENT_BALANCE");
+        act.Should().Throw<InsufficientBalanceException>();
     }
 
     #endregion
@@ -132,7 +133,7 @@ public class WalletTests
 
         var act = () => wallet.Freeze(amount, Guid.NewGuid(), null);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INVALID_FREEZE_AMOUNT");
+        act.Should().Throw<InvalidAmountException>();
     }
 
     [Fact]
@@ -142,7 +143,7 @@ public class WalletTests
 
         var act = () => wallet.Freeze(200m, Guid.NewGuid(), null);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INSUFFICIENT_BALANCE_FOR_FREEZE");
+        act.Should().Throw<InsufficientBalanceException>();
     }
 
     #endregion
@@ -171,7 +172,7 @@ public class WalletTests
 
         var act = () => wallet.Unfreeze(amount, Guid.NewGuid(), null);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INVALID_UNFREEZE_AMOUNT");
+        act.Should().Throw<InvalidAmountException>();
     }
 
     [Fact]
@@ -181,7 +182,7 @@ public class WalletTests
 
         var act = () => wallet.Unfreeze(200m, Guid.NewGuid(), null);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INSUFFICIENT_FROZEN_BALANCE");
+        act.Should().Throw<InsufficientFrozenBalanceException>();
     }
 
     #endregion
@@ -210,7 +211,7 @@ public class WalletTests
 
         var act = () => wallet.Deduct(amount, Guid.NewGuid(), null);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INVALID_DEDUCT_AMOUNT");
+        act.Should().Throw<InvalidAmountException>();
     }
 
     [Fact]
@@ -220,7 +221,7 @@ public class WalletTests
 
         var act = () => wallet.Deduct(200m, Guid.NewGuid(), null);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("INSUFFICIENT_FROZEN_BALANCE_FOR_DEDUCT");
+        act.Should().Throw<InsufficientFrozenBalanceException>();
     }
 
     #endregion
