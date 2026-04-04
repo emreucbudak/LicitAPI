@@ -2,7 +2,6 @@ using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Freeze;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Freeze.Exceptions;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;
@@ -58,6 +57,6 @@ public class FreezeFundsCommandHandlerTests
 
         var act = () => _handler.Handle(new FreezeFundsCommandRequest(wallet.UserId, 100m, Guid.NewGuid(), null), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InsufficientBalanceForFreezeException>();
+        await act.Should().ThrowAsync<Licit.WalletService.Domain.Exceptions.InsufficientBalanceException>();
     }
 }

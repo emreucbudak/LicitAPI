@@ -55,6 +55,6 @@ public class WithdrawFundsCommandHandlerTests
 
         var act = () => _handler.Handle(new WithdrawFundsCommandRequest(wallet.UserId, 100m), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InsufficientBalanceException>();
+        await act.Should().ThrowAsync<Licit.WalletService.Domain.Exceptions.InsufficientBalanceException>();
     }
 }
