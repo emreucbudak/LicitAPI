@@ -27,22 +27,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore dependencies
+      - name: Restore all projects
         run: |
           for csproj in $(find src tests -name '*.csproj'); do
             dotnet restore "$csproj"
           done
 
-      - name: Build all service projects
+      - name: Build API projects (includes all dependencies)
         run: |
-          for csproj in $(find src -name '*.csproj'); do
-            echo "Building $csproj"
-            dotnet build "$csproj" --no-restore --configuration Release
-          done
-
-      - name: Build all test projects
-        run: |
-          for csproj in $(find tests -name '*.csproj'); do
+          for csproj in $(find src -name '*.API.csproj'); do
             echo "Building $csproj"
             dotnet build "$csproj" --no-restore --configuration Release
           done
@@ -52,7 +45,7 @@ jobs:
           for csproj in $(find tests -name '*.csproj'); do
             echo "Testing $csproj"
             dotnet test "$csproj" \
-              --no-build \
+              --no-restore \
               --configuration Release \
               --logger "trx" \
               --collect:"XPlat Code Coverage" \
