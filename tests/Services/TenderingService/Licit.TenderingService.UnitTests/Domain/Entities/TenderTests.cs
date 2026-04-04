@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Licit.TenderingService.Domain.Entities;
+using Licit.TenderingService.Domain.Exceptions;
 using Licit.TenderingService.UnitTests.Common;
 
 namespace Licit.TenderingService.UnitTests.Domain.Entities;
@@ -92,7 +93,7 @@ public class TenderTests
 
         var act = () => tender.UpdateDetails("x", "y", 1, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), Guid.NewGuid());
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("TENDER_NOT_EDITABLE");
+        act.Should().Throw<TenderNotEditableException>();
     }
 
     [Fact]
@@ -102,7 +103,7 @@ public class TenderTests
 
         var act = () => tender.UpdateDetails("x", "y", 1, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), Guid.NewGuid());
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("TENDER_NOT_EDITABLE");
+        act.Should().Throw<TenderNotEditableException>();
     }
 
     [Fact]
@@ -112,7 +113,7 @@ public class TenderTests
 
         var act = () => tender.UpdateDetails("x", "y", 1, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), Guid.NewGuid());
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("TENDER_NOT_EDITABLE");
+        act.Should().Throw<TenderNotEditableException>();
     }
 
     [Fact]
@@ -122,7 +123,7 @@ public class TenderTests
 
         var act = () => tender.UpdateDetails("x", "y", 1, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), Guid.NewGuid());
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("TENDER_NOT_EDITABLE");
+        act.Should().Throw<TenderNotEditableException>();
     }
 
     #endregion
@@ -215,7 +216,7 @@ public class TenderTests
 
         var act = () => tender.ChangeStatus(newStatus);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("STATUS_TRANSITION_INVALID:*");
+        act.Should().Throw<InvalidStatusTransitionException>();
     }
 
     [Theory]
@@ -228,7 +229,7 @@ public class TenderTests
 
         var act = () => tender.ChangeStatus(newStatus);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("STATUS_TRANSITION_INVALID:*");
+        act.Should().Throw<InvalidStatusTransitionException>();
     }
 
     [Theory]
@@ -241,7 +242,7 @@ public class TenderTests
 
         var act = () => tender.ChangeStatus(newStatus);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("STATUS_TRANSITION_INVALID:*");
+        act.Should().Throw<InvalidStatusTransitionException>();
     }
 
     [Theory]
@@ -256,7 +257,7 @@ public class TenderTests
 
         var act = () => tender.ChangeStatus(newStatus);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("STATUS_TRANSITION_INVALID:*");
+        act.Should().Throw<InvalidStatusTransitionException>();
     }
 
     [Theory]
@@ -271,7 +272,7 @@ public class TenderTests
 
         var act = () => tender.ChangeStatus(newStatus);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("STATUS_TRANSITION_INVALID:*");
+        act.Should().Throw<InvalidStatusTransitionException>();
     }
 
     #endregion
@@ -285,7 +286,7 @@ public class TenderTests
 
         var act = () => tender.ValidateForDeletion();
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("ACTIVE_TENDER_DELETION");
+        act.Should().Throw<ActiveTenderDeletionException>();
     }
 
     [Fact]

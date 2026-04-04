@@ -10,7 +10,7 @@ public class DeleteTenderCommandValidatorTests
     [Fact]
     public async Task ValidRequest_ShouldNotHaveErrors()
     {
-        var request = new DeleteTenderCommandRequest(Guid.NewGuid());
+        var request = new DeleteTenderCommandRequest(Guid.NewGuid(), Guid.NewGuid());
         var result = await _validator.TestValidateAsync(request);
         result.ShouldNotHaveAnyValidationErrors();
     }
@@ -18,7 +18,7 @@ public class DeleteTenderCommandValidatorTests
     [Fact]
     public async Task Id_WhenEmpty_ShouldHaveError()
     {
-        var request = new DeleteTenderCommandRequest(Guid.Empty);
+        var request = new DeleteTenderCommandRequest(Guid.Empty, Guid.NewGuid());
         var result = await _validator.TestValidateAsync(request);
         result.ShouldHaveValidationErrorFor(x => x.Id);
     }

@@ -29,9 +29,10 @@ public class GetAllTendersQueryHandlerTests
         SetCategory(tender1, new Category("Kategori 1"));
         SetCategory(tender2, new Category("Kategori 2"));
 
-        _tenderRepo.GetAllAsync().Returns(new List<Tender> { tender1, tender2 });
+        _tenderRepo.GetAllAsync(Arg.Any<int>(), Arg.Any<int>()).Returns(new List<Tender> { tender1, tender2 });
+        _tenderRepo.GetCountAsync().Returns(2);
 
-        var result = await _handler.Handle(new GetAllTendersQueryRequest(), CancellationToken.None);
+        var result = await _handler.Handle(new GetAllTendersQueryRequest(Page: 1, PageSize: 20), CancellationToken.None);
 
         result.Tenders.Should().HaveCount(2);
         result.Tenders[0].Title.Should().Be("İhale 1");
@@ -41,9 +42,10 @@ public class GetAllTendersQueryHandlerTests
     [Fact]
     public async Task Handle_WithNoTenders_ShouldReturnEmptyList()
     {
-        _tenderRepo.GetAllAsync().Returns(Enumerable.Empty<Tender>());
+        _tenderRepo.GetAllAsync(Arg.Any<int>(), Arg.Any<int>()).Returns(Enumerable.Empty<Tender>());
+        _tenderRepo.GetCountAsync().Returns(0);
 
-        var result = await _handler.Handle(new GetAllTendersQueryRequest(), CancellationToken.None);
+        var result = await _handler.Handle(new GetAllTendersQueryRequest(Page: 1, PageSize: 20), CancellationToken.None);
 
         result.Tenders.Should().BeEmpty();
     }
@@ -53,9 +55,10 @@ public class GetAllTendersQueryHandlerTests
     {
         var tender = TenderTestFactory.CreateDraftTenderWithRules(3);
         SetCategory(tender, new Category("Test Kategori"));
-        _tenderRepo.GetAllAsync().Returns(new List<Tender> { tender });
+        _tenderRepo.GetAllAsync(Arg.Any<int>(), Arg.Any<int>()).Returns(new List<Tender> { tender });
+        _tenderRepo.GetCountAsync().Returns(1);
 
-        var result = await _handler.Handle(new GetAllTendersQueryRequest(), CancellationToken.None);
+        var result = await _handler.Handle(new GetAllTendersQueryRequest(Page: 1, PageSize: 20), CancellationToken.None);
 
         var dto = result.Tenders.Single();
         dto.Id.Should().Be(tender.Id);

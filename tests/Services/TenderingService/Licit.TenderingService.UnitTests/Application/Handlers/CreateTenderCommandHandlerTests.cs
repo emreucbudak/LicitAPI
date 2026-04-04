@@ -13,6 +13,7 @@ public class CreateTenderCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
     private readonly IValidator<CreateTenderCommandRequest> _validator = Substitute.For<IValidator<CreateTenderCommandRequest>>();
+    private readonly ITenderCacheInvalidator _cacheInvalidator = Substitute.For<ITenderCacheInvalidator>();
     private readonly CreateTenderCommandHandler _handler;
 
     public CreateTenderCommandHandlerTests()
@@ -20,7 +21,7 @@ public class CreateTenderCommandHandlerTests
         _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<CreateTenderCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new CreateTenderCommandHandler(_unitOfWork, _validator);
+        _handler = new CreateTenderCommandHandler(_unitOfWork, _validator, _cacheInvalidator);
     }
 
     private CreateTenderCommandRequest CreateValidRequest() => new(
