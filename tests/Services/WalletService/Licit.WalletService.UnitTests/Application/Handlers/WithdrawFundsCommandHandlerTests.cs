@@ -3,6 +3,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
+using DomainExceptions = Licit.WalletService.Domain.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;
 using Licit.WalletService.UnitTests.Common;
@@ -55,6 +56,6 @@ public class WithdrawFundsCommandHandlerTests
 
         var act = () => _handler.Handle(new WithdrawFundsCommandRequest(wallet.UserId, 100m), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InsufficientBalanceException>();
+        await act.Should().ThrowAsync<DomainExceptions.InsufficientBalanceException>();
     }
 }

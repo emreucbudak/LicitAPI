@@ -2,8 +2,8 @@ using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Deduct;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Deduct.Exceptions;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
+using Licit.WalletService.Domain.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;
 using Licit.WalletService.UnitTests.Common;
@@ -57,6 +57,6 @@ public class DeductFundsCommandHandlerTests
 
         var act = () => _handler.Handle(new DeductFundsCommandRequest(wallet.UserId, 100m, Guid.NewGuid(), null), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InsufficientFrozenBalanceForDeductException>();
+        await act.Should().ThrowAsync<InsufficientFrozenBalanceException>();
     }
 }
