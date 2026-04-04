@@ -132,7 +132,7 @@ builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgresql");
 
 // Redis Rate Limiting (distributed)
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379,password=LicitDev2024!";
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
 var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddRateLimiter(options =>
 {

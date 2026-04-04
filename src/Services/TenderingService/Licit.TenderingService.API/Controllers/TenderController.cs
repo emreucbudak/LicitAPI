@@ -54,6 +54,8 @@ public class TenderController(IMediator mediator) : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTenderRequest request)
     {
+        var userId = GetCurrentUserId();
+
         var command = new UpdateTenderCommandRequest(
             id,
             request.Title,
@@ -62,7 +64,8 @@ public class TenderController(IMediator mediator) : ControllerBase
             request.StartDate,
             request.EndDate,
             request.CategoryId,
-            request.Rules
+            request.Rules,
+            userId
         );
 
         var result = await mediator.Send(command);
@@ -81,7 +84,8 @@ public class TenderController(IMediator mediator) : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await mediator.Send(new DeleteTenderCommandRequest(id));
+        var userId = GetCurrentUserId();
+        await mediator.Send(new DeleteTenderCommandRequest(id, userId));
         return NoContent();
     }
 
