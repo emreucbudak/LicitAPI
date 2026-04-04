@@ -16,6 +16,8 @@ public class ChangeTenderStatusCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
     private readonly IValidator<ChangeTenderStatusCommandRequest> _validator = Substitute.For<IValidator<ChangeTenderStatusCommandRequest>>();
+    private readonly ITenderCacheInvalidator _cacheInvalidator = Substitute.For<ITenderCacheInvalidator>();
+    private readonly IEventPublisher _eventPublisher = Substitute.For<IEventPublisher>();
     private readonly ChangeTenderStatusCommandHandler _handler;
 
     public ChangeTenderStatusCommandHandlerTests()
@@ -23,7 +25,7 @@ public class ChangeTenderStatusCommandHandlerTests
         _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<ChangeTenderStatusCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new ChangeTenderStatusCommandHandler(_unitOfWork, _validator);
+        _handler = new ChangeTenderStatusCommandHandler(_unitOfWork, _validator, _cacheInvalidator, _eventPublisher);
     }
 
     [Fact]

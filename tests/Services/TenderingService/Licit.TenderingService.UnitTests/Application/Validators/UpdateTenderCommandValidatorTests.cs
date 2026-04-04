@@ -17,7 +17,8 @@ public class UpdateTenderCommandValidatorTests
         StartDate: DateTime.UtcNow.AddDays(1),
         EndDate: DateTime.UtcNow.AddDays(30),
         CategoryId: Guid.NewGuid(),
-        Rules: null
+        Rules: null,
+        UserId: Guid.NewGuid()
     );
 
     [Fact]
