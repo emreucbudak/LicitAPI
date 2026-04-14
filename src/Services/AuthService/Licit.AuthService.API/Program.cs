@@ -2,6 +2,7 @@ using System.Text;
 using FlashMediator;
 using FluentValidation;
 using Licit.AuthService.API.Middleware;
+using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
 using Licit.AuthService.Application.Interfaces;
@@ -30,6 +31,12 @@ builder.Services.AddOptions<JwtSettings>()
     .ValidateOnStart();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
 builder.Services.AddSingleton(jwtSettings);
+builder.Services.AddOptions<TwoFactorLoginSettings>()
+    .BindConfiguration("TwoFactorLogin")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+var twoFactorLoginSettings = builder.Configuration.GetSection("TwoFactorLogin").Get<TwoFactorLoginSettings>()!;
+builder.Services.AddSingleton(twoFactorLoginSettings);
 
 // CORS
 builder.Services.AddCors(options =>
@@ -66,7 +73,14 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Services
+builder.Services.AddScoped<ILoginVerificationCodeStore, RedisLoginVerificationCodeStore>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddSingleton(sp =>
+    RabbitMqLoginEmailPublisher.CreateAsync(
+        sp.GetRequiredService<IConfiguration>(),
+        sp.GetRequiredService<ILogger<RabbitMqLoginEmailPublisher>>()
+    ).GetAwaiter().GetResult());
+builder.Services.AddSingleton<ILoginEmailPublisher>(sp => sp.GetRequiredService<RabbitMqLoginEmailPublisher>());
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
@@ -100,7 +114,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthPolicies.AccessToken, policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("tokenType", AuthTokenTypes.Access));
+
+    options.AddPolicy(AuthPolicies.PendingTwoFactor, policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("tokenType", AuthTokenTypes.PendingTwoFactor));
+});
 builder.Services.AddControllers();
 
 // Swagger
@@ -139,6 +162,14 @@ builder.Services.AddRateLimiter(options =>
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.SegmentsPerWindow = 6;
     });
+});
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"]
+        ?? builder.Configuration.GetConnectionString("Redis")
+        ?? "localhost:6379";
+    options.InstanceName = "Auth:";
 });
 
 var app = builder.Build();

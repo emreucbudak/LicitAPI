@@ -1,7 +1,6 @@
 namespace Licit.AuthService.Application.Features.CQRS.Auth.Login;
 
 public record LoginCommandResponse(
-    string AccessToken,
-    string RefreshToken,
+    string TemporaryToken,
     DateTime ExpiresAt
 );

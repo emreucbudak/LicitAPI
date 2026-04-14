@@ -1,9 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using FlashMediator;
+using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
 using Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register;
 using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
+using Licit.AuthService.Application.Features.CQRS.Auth.VerifyLogin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -30,6 +34,35 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
+    [EnableRateLimiting("auth")]
+    [Authorize(Policy = AuthPolicies.PendingTwoFactor)]
+    [HttpPost("login/verify")]
+    public async Task<IActionResult> VerifyLogin([FromBody] VerifyLoginRequest request)
+    {
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst("sub")?.Value;
+        var email = User.FindFirst(ClaimTypes.Email)?.Value
+            ?? User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
+            ?? User.FindFirst("email")?.Value;
+        var tokenId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value
+            ?? User.FindFirst("jti")?.Value;
+
+        if (!Guid.TryParse(userIdValue, out var userId)
+            || string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(tokenId))
+            return Unauthorized();
+
+        var result = await mediator.Send(new VerifyLoginCommandRequest(
+            request.Email,
+            request.Code,
+            userId,
+            email,
+            tokenId));
+
+        return Ok(result);
+    }
+
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommandRequest request)
     {
@@ -37,7 +70,7 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
-    [Authorize]
+    [Authorize(Policy = AuthPolicies.AccessToken)]
     [HttpPost("revoke")]
     public async Task<IActionResult> Revoke([FromBody] RevokeTokenCommandRequest request)
     {
@@ -45,7 +78,7 @@ public class AuthController(IMediator mediator) : ControllerBase
         return NoContent();
     }
 
-    [Authorize]
+    [Authorize(Policy = AuthPolicies.AccessToken)]
     [HttpGet("me")]
     public IActionResult Me()
     {
@@ -62,3 +95,5 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(profile);
     }
 }
+
+public record VerifyLoginRequest(string Email, string Code);

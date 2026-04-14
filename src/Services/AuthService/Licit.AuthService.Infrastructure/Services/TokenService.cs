@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
@@ -32,6 +33,7 @@ public class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("tokenType", AuthTokenTypes.Access),
             new("firstName", user.FirstName),
             new("lastName", user.LastName)
         };
@@ -50,6 +52,30 @@ public class TokenService : ITokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public string GenerateTemporaryLoginToken(ApplicationUser user, DateTime expiresAt, string challengeId)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Jti, challengeId),
+            new("tokenType", AuthTokenTypes.PendingTwoFactor)
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: expiresAt,
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     public string GenerateRefreshToken(Guid userId)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
@@ -59,7 +85,7 @@ public class TokenService : ITokenService
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new("tokenType", "refresh")
+            new("tokenType", AuthTokenTypes.Refresh)
         };
 
         var token = new JwtSecurityToken(
@@ -93,7 +119,7 @@ public class TokenService : ITokenService
             }, out _);
 
             var tokenType = principal.FindFirst("tokenType")?.Value;
-            if (tokenType != "refresh")
+            if (tokenType != AuthTokenTypes.Refresh)
                 return null;
 
             var sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value

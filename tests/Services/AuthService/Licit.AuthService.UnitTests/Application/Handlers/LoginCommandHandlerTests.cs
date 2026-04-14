@@ -16,7 +16,9 @@ public class LoginCommandHandlerTests
 {
     private readonly UserManager<ApplicationUser> _userManager = UserManagerMockHelper.CreateMock();
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
-    private readonly JwtSettings _jwtSettings = new() { Secret = "test", Issuer = "test", Audience = "test", AccessTokenExpirationMinutes = 15 };
+    private readonly ILoginVerificationCodeStore _loginVerificationCodeStore = Substitute.For<ILoginVerificationCodeStore>();
+    private readonly ILoginEmailPublisher _loginEmailPublisher = Substitute.For<ILoginEmailPublisher>();
+    private readonly TwoFactorLoginSettings _twoFactorLoginSettings = new() { VerificationCodeExpirationMinutes = 5 };
     private readonly IValidator<LoginCommandRequest> _validator = Substitute.For<IValidator<LoginCommandRequest>>();
     private readonly LoginCommandHandler _handler;
 
@@ -24,22 +26,72 @@ public class LoginCommandHandlerTests
     {
         _validator.ValidateAsync(Arg.Any<LoginCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new LoginCommandHandler(_userManager, _tokenService, _jwtSettings, _validator);
+        _handler = new LoginCommandHandler(
+            _userManager,
+            _tokenService,
+            _loginVerificationCodeStore,
+            _loginEmailPublisher,
+            _twoFactorLoginSettings,
+            _validator);
     }
 
     [Fact]
-    public async Task Handle_ValidCredentials_ShouldReturnTokens()
+    public async Task Handle_ValidCredentials_ShouldStoreCodePublishEmailAndReturnTemporaryToken()
     {
         var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "test@test.com", FirstName = "Ali", LastName = "Veli", IsActive = true };
+        string? generatedCode = null;
+
         _userManager.FindByEmailAsync("test@test.com").Returns(user);
         _userManager.CheckPasswordAsync(user, "Password123!").Returns(true);
-        _tokenService.GenerateAccessTokenAsync(user).Returns("access-token");
-        _tokenService.GenerateRefreshToken(user.Id).Returns("refresh-token");
+        _tokenService.GenerateTemporaryLoginToken(user, Arg.Any<DateTime>(), Arg.Any<string>()).Returns("temporary-token");
+        _loginVerificationCodeStore
+            .When(x => x.StoreAsync(
+                Arg.Any<string>(),
+                Arg.Any<LoginVerificationChallenge>(),
+                Arg.Any<TimeSpan>(),
+                Arg.Any<CancellationToken>()))
+            .Do(callInfo => generatedCode = callInfo.ArgAt<LoginVerificationChallenge>(1).Code);
 
         var result = await _handler.Handle(new LoginCommandRequest("test@test.com", "Password123!"), CancellationToken.None);
 
-        result.AccessToken.Should().Be("access-token");
-        result.RefreshToken.Should().Be("refresh-token");
+        result.TemporaryToken.Should().Be("temporary-token");
+        generatedCode.Should().NotBeNull();
+        generatedCode.Should().HaveLength(6);
+        generatedCode.Should().MatchRegex(@"^\d{6}$");
+        await _loginVerificationCodeStore.Received(1).StoreAsync(
+            "test@test.com",
+            Arg.Is<LoginVerificationChallenge>(challenge => challenge.Code == generatedCode && !string.IsNullOrWhiteSpace(challenge.ChallengeId)),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+        await _loginEmailPublisher.Received(1).PublishLoginVerificationCodeAsync(
+            "test@test.com",
+            generatedCode!,
+            Arg.Any<DateTime>(),
+            "Ali Veli",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_EmailPublishFails_ShouldRemoveStoredCodeAndRethrow()
+    {
+        var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "test@test.com", FirstName = "Ali", LastName = "Veli", IsActive = true };
+
+        _userManager.FindByEmailAsync("test@test.com").Returns(user);
+        _userManager.CheckPasswordAsync(user, "Password123!").Returns(true);
+        _tokenService.GenerateTemporaryLoginToken(user, Arg.Any<DateTime>(), Arg.Any<string>()).Returns("temporary-token");
+        _loginEmailPublisher
+            .PublishLoginVerificationCodeAsync(
+                "test@test.com",
+                Arg.Any<string>(),
+                Arg.Any<DateTime>(),
+                "Ali Veli",
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("RabbitMQ unavailable")));
+
+        var act = () => _handler.Handle(new LoginCommandRequest("test@test.com", "Password123!"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await _loginVerificationCodeStore.Received(1).RemoveAsync("test@test.com", Arg.Any<CancellationToken>());
     }
 
     [Fact]
