@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Licit.MailService.Application.DTOs;
 
 namespace Licit.MailService.UnitTests.Application.DTOs;
@@ -16,7 +17,7 @@ public class AuthLoginTwoFactorEmailTemplateTests
         var emailEvent = new AuthLoginTwoFactorEmailEvent(
             "user@example.com",
             "123456",
-            new DateTime(2026, 4, 14, 18, 30),
+            new DateTime(2026, 4, 14, 18, 30, 0),
             "Aykut"
         );
 
