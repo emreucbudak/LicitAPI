@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/" />
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/Licit.Gateway.API/Licit.Gateway.API.csproj" />
+  </Folder>
   <Folder Name="/src/Services/" />
   <Folder Name="/src/Services/AuthService/">
     <Project Path="src/Services/AuthService/Licit.AuthService.API/Licit.AuthService.API.csproj" />
@@ -24,6 +27,10 @@
     <Project Path="src/Services/MailService/Licit.MailService.Application/Licit.MailService.Application.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Domain/Licit.MailService.Domain.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Infrastructure/Licit.MailService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/ci.yml" />
   </Folder>
   <Folder Name="/docker/">
     <File Path="docker/docker-compose.yml" />
