@@ -1,25 +1,4 @@
 services:
-  postgresql:
-    image: postgres:17
-    container_name: licit-postgresql
-    environment:
-      - POSTGRES_USER=licit
-      - POSTGRES_PASSWORD=LicitDev2024!
-      - POSTGRES_DB=LicitDb
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgresql-data:/var/lib/postgresql/data
-      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
-    networks:
-      - licit-network
-    healthcheck:
-      test: pg_isready -U licit -d LicitDb
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-
   gateway:
     build:
       context: ..
@@ -59,7 +38,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitAuthDb;Username=licit;Password=LicitDev2024!
+      - ConnectionStrings__DefaultConnection=${AUTH_DB_CONNECTION_STRING}
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
@@ -71,8 +50,6 @@ services:
     ports:
       - "5122:8080"
     depends_on:
-      postgresql:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
       redis:
@@ -88,7 +65,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitTenderingDb;Username=licit;Password=LicitDev2024!
+      - ConnectionStrings__DefaultConnection=${TENDERING_DB_CONNECTION_STRING}
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
@@ -100,8 +77,6 @@ services:
     ports:
       - "5132:8080"
     depends_on:
-      postgresql:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
       redis:
@@ -117,15 +92,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitWalletDb;Username=licit;Password=LicitDev2024!
+      - ConnectionStrings__DefaultConnection=${WALLET_DB_CONNECTION_STRING}
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
     ports:
       - "5142:8080"
-    depends_on:
-      postgresql:
-        condition: service_healthy
     networks:
       - licit-network
 
@@ -174,7 +146,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Host=postgresql;Port=5432;Database=LicitMailDb;Username=licit;Password=LicitDev2024!
+      - ConnectionStrings__DefaultConnection=${MAIL_DB_CONNECTION_STRING}
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
@@ -191,15 +163,12 @@ services:
     ports:
       - "5152:8080"
     depends_on:
-      postgresql:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - licit-network
 
 volumes:
-  postgresql-data:
   rabbitmq-data:
   redis-data:
 
