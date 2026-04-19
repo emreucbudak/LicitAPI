@@ -112,6 +112,8 @@ builder.Services.AddSwaggerGen(options =>
 // RabbitMQ Consumer
 builder.Services.AddHostedService<TenderEventConsumerService>();
 builder.Services.AddHostedService<AuthLoginTwoFactorEventConsumerService>();
+builder.Services.AddHostedService<AuthRegisterVerificationEventConsumerService>();
+builder.Services.AddHostedService<AuthPasswordResetEventConsumerService>();
 
 // Health Checks
 builder.Services.AddHealthChecks()

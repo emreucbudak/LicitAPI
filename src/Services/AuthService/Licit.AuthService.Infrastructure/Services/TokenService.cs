@@ -53,28 +53,28 @@ public class TokenService : ITokenService
     }
 
     public string GenerateTemporaryLoginToken(ApplicationUser user, DateTime expiresAt, string challengeId)
-    {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        => GenerateTemporaryToken(
+            user.Id.ToString(),
+            user.Email!,
+            AuthTokenTypes.PendingTwoFactor,
+            expiresAt,
+            challengeId);
 
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email!),
-            new(JwtRegisteredClaimNames.Jti, challengeId),
-            new("tokenType", AuthTokenTypes.PendingTwoFactor)
-        };
+    public string GenerateTemporaryRegisterToken(string email, DateTime expiresAt, string challengeId)
+        => GenerateTemporaryToken(
+            email,
+            email,
+            AuthTokenTypes.PendingRegister,
+            expiresAt,
+            challengeId);
 
-        var token = new JwtSecurityToken(
-            issuer: _jwtSettings.Issuer,
-            audience: _jwtSettings.Audience,
-            claims: claims,
-            expires: expiresAt,
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
+    public string GenerateTemporaryPasswordResetToken(string email, DateTime expiresAt, string challengeId)
+        => GenerateTemporaryToken(
+            email,
+            email,
+            AuthTokenTypes.PendingPasswordReset,
+            expiresAt,
+            challengeId);
 
     public string GenerateRefreshToken(Guid userId)
     {
@@ -131,5 +131,75 @@ public class TokenService : ITokenService
         {
             return null;
         }
+    }
+
+    public TemporaryTokenPayload? ValidateTemporaryToken(string temporaryToken, string expectedTokenType)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(temporaryToken, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAudience = _jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ClockSkew = TimeSpan.Zero
+            }, out _);
+
+            var tokenType = principal.FindFirst("tokenType")?.Value;
+            if (!string.Equals(tokenType, expectedTokenType, StringComparison.Ordinal))
+                return null;
+
+            var email = principal.FindFirst(JwtRegisteredClaimNames.Email)?.Value
+                        ?? principal.FindFirst(ClaimTypes.Email)?.Value
+                        ?? principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var tokenId = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+            if (string.IsNullOrWhiteSpace(email)
+                || string.IsNullOrWhiteSpace(tokenId)
+                || string.IsNullOrWhiteSpace(tokenType))
+                return null;
+
+            return new TemporaryTokenPayload(email, tokenId, tokenType);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string GenerateTemporaryToken(
+        string subject,
+        string email,
+        string tokenType,
+        DateTime expiresAt,
+        string challengeId)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, subject),
+            new(JwtRegisteredClaimNames.Email, email),
+            new(JwtRegisteredClaimNames.Jti, challengeId),
+            new("tokenType", tokenType)
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: expiresAt,
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

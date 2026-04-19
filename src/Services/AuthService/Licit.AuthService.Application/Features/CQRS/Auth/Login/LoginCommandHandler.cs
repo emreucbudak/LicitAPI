@@ -1,11 +1,11 @@
 using FlashMediator;
 using FluentValidation;
+using Licit.AuthService.Application.Common;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login.Exceptions;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Cryptography;
 
 namespace Licit.AuthService.Application.Features.CQRS.Auth.Login;
 
@@ -31,7 +31,7 @@ public class LoginCommandHandler(
             throw new AccountDisabledException();
 
         var email = user.Email ?? request.Email;
-        var verificationCode = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        var verificationCode = VerificationCodeHelper.GenerateSixDigitCode();
         var challengeId = Guid.NewGuid().ToString("N");
         var expiresAt = DateTime.UtcNow.AddMinutes(twoFactorLoginSettings.VerificationCodeExpirationMinutes);
         var lifetime = expiresAt - DateTime.UtcNow;

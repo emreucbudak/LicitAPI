@@ -1,7 +1,6 @@
-using System.Security.Cryptography;
-using System.Text;
 using FlashMediator;
 using FluentValidation;
+using Licit.AuthService.Application.Common;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login.Exceptions;
 using Licit.AuthService.Application.Features.CQRS.Auth.VerifyLogin.Exceptions;
@@ -37,7 +36,7 @@ public class VerifyLoginCommandHandler(
         var storedChallenge = await loginVerificationCodeStore.GetAsync(request.Email, cancellationToken);
         if (storedChallenge == null
             || !string.Equals(storedChallenge.ChallengeId, request.TemporaryTokenId, StringComparison.Ordinal)
-            || !CodesMatch(storedChallenge.Code, request.Code))
+            || !VerificationCodeHelper.CodesMatch(storedChallenge.Code, request.Code))
             throw new InvalidVerificationCodeException();
 
         await loginVerificationCodeStore.RemoveAsync(request.Email, cancellationToken);
@@ -47,13 +46,5 @@ public class VerifyLoginCommandHandler(
         var expiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes);
 
         return new VerifyLoginCommandResponse(accessToken, refreshToken, expiresAt);
-    }
-
-    private static bool CodesMatch(string expectedCode, string actualCode)
-    {
-        var expectedBytes = Encoding.UTF8.GetBytes(expectedCode);
-        var actualBytes = Encoding.UTF8.GetBytes(actualCode);
-
-        return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
     }
 }

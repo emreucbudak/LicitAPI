@@ -8,4 +8,18 @@ public interface ILoginEmailPublisher
         DateTime expiresAt,
         string? userName,
         CancellationToken cancellationToken = default);
+
+    Task PublishRegisterVerificationCodeAsync(
+        string email,
+        string code,
+        DateTime expiresAt,
+        string? userName,
+        CancellationToken cancellationToken = default);
+
+    Task PublishPasswordResetCodeAsync(
+        string email,
+        string code,
+        DateTime expiresAt,
+        string? userName,
+        CancellationToken cancellationToken = default);
 }

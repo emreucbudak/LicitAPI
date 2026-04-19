@@ -37,6 +37,12 @@ builder.Services.AddOptions<TwoFactorLoginSettings>()
     .ValidateOnStart();
 var twoFactorLoginSettings = builder.Configuration.GetSection("TwoFactorLogin").Get<TwoFactorLoginSettings>()!;
 builder.Services.AddSingleton(twoFactorLoginSettings);
+builder.Services.AddOptions<AuthVerificationSettings>()
+    .BindConfiguration("AuthVerification")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+var authVerificationSettings = builder.Configuration.GetSection("AuthVerification").Get<AuthVerificationSettings>()!;
+builder.Services.AddSingleton(authVerificationSettings);
 
 // CORS
 builder.Services.AddCors(options =>
@@ -74,6 +80,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Services
 builder.Services.AddScoped<ILoginVerificationCodeStore, RedisLoginVerificationCodeStore>();
+builder.Services.AddScoped<IRegisterVerificationStore, RedisRegisterVerificationStore>();
+builder.Services.AddScoped<IPasswordResetVerificationStore, RedisPasswordResetVerificationStore>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton(sp =>
     RabbitMqLoginEmailPublisher.CreateAsync(

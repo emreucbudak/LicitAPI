@@ -10,7 +10,9 @@ namespace Licit.AuthService.Infrastructure.Services;
 public class RabbitMqLoginEmailPublisher : ILoginEmailPublisher, IAsyncDisposable
 {
     private const string ExchangeName = "licit.events";
-    private const string RoutingKey = "auth.login.2fa.requested";
+    private const string LoginRoutingKey = "auth.login.2fa.requested";
+    private const string RegisterRoutingKey = "auth.register.verification.requested";
+    private const string PasswordResetRoutingKey = "auth.password-reset.requested";
     private readonly ILogger<RabbitMqLoginEmailPublisher> _logger;
     private readonly IConnection _connection;
     private readonly IChannel _channel;
@@ -51,6 +53,59 @@ public class RabbitMqLoginEmailPublisher : ILoginEmailPublisher, IAsyncDisposabl
         string? userName,
         CancellationToken cancellationToken = default)
     {
+        await PublishAsync(
+            LoginRoutingKey,
+            email,
+            code,
+            expiresAt,
+            userName,
+            "Auth login 2FA event published for {Email}",
+            cancellationToken);
+    }
+
+    public async Task PublishRegisterVerificationCodeAsync(
+        string email,
+        string code,
+        DateTime expiresAt,
+        string? userName,
+        CancellationToken cancellationToken = default)
+    {
+        await PublishAsync(
+            RegisterRoutingKey,
+            email,
+            code,
+            expiresAt,
+            userName,
+            "Auth register verification event published for {Email}",
+            cancellationToken);
+    }
+
+    public async Task PublishPasswordResetCodeAsync(
+        string email,
+        string code,
+        DateTime expiresAt,
+        string? userName,
+        CancellationToken cancellationToken = default)
+    {
+        await PublishAsync(
+            PasswordResetRoutingKey,
+            email,
+            code,
+            expiresAt,
+            userName,
+            "Auth password reset event published for {Email}",
+            cancellationToken);
+    }
+
+    private async Task PublishAsync(
+        string routingKey,
+        string email,
+        string code,
+        DateTime expiresAt,
+        string? userName,
+        string logMessageTemplate,
+        CancellationToken cancellationToken)
+    {
         var message = new
         {
             Email = email,
@@ -60,8 +115,8 @@ public class RabbitMqLoginEmailPublisher : ILoginEmailPublisher, IAsyncDisposabl
         };
 
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
-        await _channel.BasicPublishAsync(ExchangeName, RoutingKey, body, cancellationToken);
-        _logger.LogInformation("Auth login 2FA event published for {Email}", email);
+        await _channel.BasicPublishAsync(ExchangeName, routingKey, body, cancellationToken);
+        _logger.LogInformation(logMessageTemplate, email);
     }
 
     public async ValueTask DisposeAsync()

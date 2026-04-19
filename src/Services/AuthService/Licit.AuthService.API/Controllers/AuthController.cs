@@ -1,13 +1,17 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FlashMediator;
+using Licit.AuthService.Application.Features.CQRS.Auth.ForgotPassword;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
+using Licit.AuthService.Application.Features.CQRS.Auth.ResetForgotPassword;
 using Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register;
 using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
+using Licit.AuthService.Application.Features.CQRS.Auth.VerifyForgotPassword;
 using Licit.AuthService.Application.Features.CQRS.Auth.VerifyLogin;
+using Licit.AuthService.Application.Features.CQRS.Auth.VerifyRegister;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -21,6 +25,14 @@ public class AuthController(IMediator mediator) : ControllerBase
     [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommandRequest request)
+    {
+        var result = await mediator.Send(request);
+        return Ok(result);
+    }
+
+    [EnableRateLimiting("auth")]
+    [HttpPost("register/verify")]
+    public async Task<IActionResult> VerifyRegister([FromBody] VerifyRegisterCommandRequest request)
     {
         var result = await mediator.Send(request);
         return Ok(result);
@@ -65,6 +77,30 @@ public class AuthController(IMediator mediator) : ControllerBase
 
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommandRequest request)
+    {
+        var result = await mediator.Send(request);
+        return Ok(result);
+    }
+
+    [EnableRateLimiting("auth")]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommandRequest request)
+    {
+        var result = await mediator.Send(request);
+        return Ok(result);
+    }
+
+    [EnableRateLimiting("auth")]
+    [HttpPost("forgot-password/verify")]
+    public async Task<IActionResult> VerifyForgotPassword([FromBody] VerifyForgotPasswordCommandRequest request)
+    {
+        var result = await mediator.Send(request);
+        return Ok(result);
+    }
+
+    [EnableRateLimiting("auth")]
+    [HttpPost("forgot-password/reset")]
+    public async Task<IActionResult> ResetForgotPassword([FromBody] ResetForgotPasswordCommandRequest request)
     {
         var result = await mediator.Send(request);
         return Ok(result);

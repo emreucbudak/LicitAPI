@@ -1,5 +1,6 @@
 using FlashMediator;
 using FluentValidation;
+using Licit.AuthService.Application.Common;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register.Exceptions;
 using Licit.AuthService.Application.Interfaces;
@@ -11,7 +12,10 @@ namespace Licit.AuthService.Application.Features.CQRS.Auth.Register;
 public class RegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
     ITokenService tokenService,
-    JwtSettings jwtSettings,
+    IPasswordHasher<ApplicationUser> passwordHasher,
+    IRegisterVerificationStore registerVerificationStore,
+    ILoginEmailPublisher loginEmailPublisher,
+    AuthVerificationSettings authVerificationSettings,
     IValidator<RegisterCommandRequest> validator) : IRequestHandler<RegisterCommandRequest, RegisterCommandResponse>
 {
     public async Task<RegisterCommandResponse> Handle(RegisterCommandRequest request, CancellationToken cancellationToken)
@@ -24,25 +28,54 @@ public class RegisterCommandHandler(
         if (existingUser != null)
             throw new EmailAlreadyExistsException();
 
-        var user = new ApplicationUser
+        var email = request.Email.Trim();
+        var firstName = request.FirstName.Trim();
+        var lastName = request.LastName.Trim();
+        var challengeId = Guid.NewGuid().ToString("N");
+        var verificationCode = VerificationCodeHelper.GenerateSixDigitCode();
+        var expiresAt = DateTime.UtcNow.AddMinutes(authVerificationSettings.RegisterVerificationCodeExpirationMinutes);
+        var lifetime = expiresAt - DateTime.UtcNow;
+        var temporaryToken = tokenService.GenerateTemporaryRegisterToken(email, expiresAt, challengeId);
+        var pendingUser = new ApplicationUser
         {
-            Id = Guid.CreateVersion7(),
-            UserName = request.Email,
-            Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName
+            UserName = email,
+            Email = email,
+            FirstName = firstName,
+            LastName = lastName
         };
+        var passwordHash = passwordHasher.HashPassword(pendingUser, request.Password);
 
-        var result = await userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-            throw new UserCreationFailedException(string.Join(", ", result.Errors.Select(e => e.Description)));
+        await registerVerificationStore.StoreAsync(
+            temporaryToken,
+            new PendingRegistrationVerification
+            {
+                Email = email,
+                FirstName = firstName,
+                LastName = lastName,
+                PasswordHash = passwordHash,
+                Code = verificationCode,
+                ChallengeId = challengeId,
+                ExpiresAtUtc = expiresAt,
+                RemainingAttempts = authVerificationSettings.MaxVerificationAttempts
+            },
+            lifetime,
+            cancellationToken);
 
-        await userManager.AddToRoleAsync(user, "User");
+        try
+        {
+            await loginEmailPublisher.PublishRegisterVerificationCodeAsync(
+                email,
+                verificationCode,
+                expiresAt,
+                $"{firstName} {lastName}".Trim(),
+                cancellationToken);
+        }
+        catch
+        {
+            await registerVerificationStore.RemoveAsync(temporaryToken, cancellationToken);
+            throw;
+        }
 
-        var accessToken = await tokenService.GenerateAccessTokenAsync(user);
-        var refreshToken = tokenService.GenerateRefreshToken(user.Id);
-        var expiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes);
-
-        return new RegisterCommandResponse(accessToken, refreshToken, expiresAt);
+        return new RegisterCommandResponse(temporaryToken, expiresAt, email);
     }
 }
