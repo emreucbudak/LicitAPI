@@ -51,7 +51,7 @@ builder.Services.AddDbContext<MailDbContext>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Services
-builder.Services.AddScoped<IEmailSender, MailtrapEmailSender>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(typeof(SendEmailCommandHandler).Assembly);

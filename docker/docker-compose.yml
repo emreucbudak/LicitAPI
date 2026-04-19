@@ -130,12 +130,12 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
-      - SmtpSettings__Host=sandbox.smtp.mailtrap.io
+      - SmtpSettings__Host=smtp.azurecomm.net
       - SmtpSettings__Port=587
-      - SmtpSettings__Username=${MAILTRAP_USERNAME:-username}
-      - SmtpSettings__Password=${MAILTRAP_PASSWORD:-password}
-      - SmtpSettings__FromEmail=noreply@licit.com
-      - SmtpSettings__FromName=Licit
+      - SmtpSettings__Username=${AZURE_COMMUNICATION_SMTP_USERNAME}
+      - SmtpSettings__Password=${AZURE_COMMUNICATION_SMTP_PASSWORD}
+      - SmtpSettings__FromEmail=${AZURE_COMMUNICATION_FROM_EMAIL}
+      - SmtpSettings__FromName=${AZURE_COMMUNICATION_FROM_NAME:-Licit}
       - RabbitMq__Host=rabbitmq
       - RabbitMq__Port=5672
       - RabbitMq__Username=licit

@@ -5,6 +5,8 @@
 
 # Serilog log files
 logs/
+.env
+docker/.env
 
 # User-specific files
 *.rsuser

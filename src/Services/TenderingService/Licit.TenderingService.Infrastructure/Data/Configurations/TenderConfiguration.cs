@@ -31,7 +31,10 @@ public class TenderConfiguration : IEntityTypeConfiguration<Tender>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(t => t.Status);
-        builder.HasIndex(t => t.CreatedByUserId);
+        builder.HasIndex(t => t.CreatedAt)
+            .IsDescending();
+        builder.HasIndex(t => new { t.CreatedByUserId, t.CreatedAt })
+            .IsDescending(false, true);
         builder.HasIndex(t => t.EndDate);
         builder.HasIndex(t => t.CategoryId);
     }

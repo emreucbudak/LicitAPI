@@ -27,7 +27,7 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
         builder.Property(t => t.FrozenBalanceAfter)
             .HasPrecision(18, 2);
 
-        builder.HasIndex(t => t.WalletId);
-        builder.HasIndex(t => t.CreatedAt);
+        builder.HasIndex(t => new { t.WalletId, t.CreatedAt })
+            .IsDescending(false, true);
     }
 }

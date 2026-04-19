@@ -5,11 +5,11 @@ using MimeKit;
 
 namespace Licit.MailService.Infrastructure.Services;
 
-public class MailtrapEmailSender : IEmailSender
+public class SmtpEmailSender : IEmailSender
 {
     private readonly SmtpSettings _settings;
 
-    public MailtrapEmailSender(SmtpSettings settings)
+    public SmtpEmailSender(SmtpSettings settings)
     {
         _settings = settings;
     }

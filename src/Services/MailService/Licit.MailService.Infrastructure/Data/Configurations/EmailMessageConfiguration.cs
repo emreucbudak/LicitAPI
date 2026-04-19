@@ -28,7 +28,9 @@ public class EmailMessageConfiguration : IEntityTypeConfiguration<EmailMessage>
         builder.Property(e => e.ErrorMessage)
             .HasMaxLength(2000);
 
-        builder.HasIndex(e => e.Status);
-        builder.HasIndex(e => e.CreatedAt);
+        builder.HasIndex(e => e.CreatedAt)
+            .IsDescending();
+        builder.HasIndex(e => new { e.Status, e.CreatedAt })
+            .IsDescending(false, true);
     }
 }
