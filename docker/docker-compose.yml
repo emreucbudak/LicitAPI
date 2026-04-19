@@ -14,7 +14,7 @@ services:
       - ReverseProxy__Clusters__bidding-cluster__Destinations__bidding-service__Address=http://host.docker.internal:5160/
       - ReverseProxy__Clusters__streamer-cluster__Destinations__streamer-service__Address=http://host.docker.internal:5161/
       - ReverseProxy__Clusters__frontend-cluster__Destinations__frontend-dev-server__Address=http://host.docker.internal:5173/
-      - RateLimiting__Redis__ConnectionString=redis:6379,password=LicitDev2024!
+      - RateLimiting__Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
     ports:
       - "5100:8080"
     depends_on:
@@ -26,8 +26,6 @@ services:
         condition: service_started
       mail-service:
         condition: service_started
-      redis:
-        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -45,7 +43,7 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
-      - Redis__ConnectionString=redis:6379,password=LicitDev2024!
+      - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
       - RabbitMq__Host=rabbitmq
       - RabbitMq__Port=5672
       - RabbitMq__Username=licit
@@ -54,8 +52,6 @@ services:
       - "5122:8080"
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - licit-network
@@ -72,7 +68,7 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
-      - Redis__ConnectionString=redis:6379,password=LicitDev2024!
+      - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
       - RabbitMq__Host=rabbitmq
       - RabbitMq__Port=5672
       - RabbitMq__Username=licit
@@ -81,8 +77,6 @@ services:
       - "5132:8080"
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - licit-network
@@ -124,23 +118,6 @@ services:
       retries: 5
       start_period: 30s
 
-  redis:
-    image: redis:8.6-alpine
-    container_name: licit-redis
-    command: redis-server --requirepass LicitDev2024!
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - licit-network
-    healthcheck:
-      test: redis-cli -a LicitDev2024! ping | grep PONG
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   mail-service:
     build:
       context: ..
@@ -173,7 +150,6 @@ services:
 
 volumes:
   rabbitmq-data:
-  redis-data:
 
 networks:
   licit-network:
