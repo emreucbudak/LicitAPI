@@ -14,6 +14,7 @@ services:
       - ReverseProxy__Clusters__bidding-cluster__Destinations__bidding-service__Address=http://host.docker.internal:5160/
       - ReverseProxy__Clusters__streamer-cluster__Destinations__streamer-service__Address=http://host.docker.internal:5161/
       - ReverseProxy__Clusters__frontend-cluster__Destinations__frontend-dev-server__Address=http://host.docker.internal:5173/
+      - RateLimiting__Redis__ConnectionString=redis:6379,password=LicitDev2024!
     ports:
       - "5100:8080"
     depends_on:
@@ -25,6 +26,8 @@ services:
         condition: service_started
       mail-service:
         condition: service_started
+      redis:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
