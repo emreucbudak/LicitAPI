@@ -1,6 +1,38 @@
+using System.Linq;
 using System.Reflection;
+using Licit.Gateway.API.RateLimiting;
+using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOptions<RedisRateLimitingOptions>()
+    .BindConfiguration("RateLimiting")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Redis.ConnectionString),
+        "RateLimiting:Redis:ConnectionString must be configured.")
+    .Validate(options => options.Policies.Count > 0,
+        "At least one rate limiting policy must be configured.")
+    .Validate(options => options.Policies.All(policy =>
+            !string.IsNullOrWhiteSpace(policy.Name) &&
+            !string.IsNullOrWhiteSpace(policy.PathPrefix) &&
+            policy.PermitLimit > 0 &&
+            policy.WindowSeconds > 0),
+        "Each rate limiting policy must define Name, PathPrefix, PermitLimit, and WindowSeconds.")
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(serviceProvider =>
+{
+    var rateLimitOptions = serviceProvider
+        .GetRequiredService<IOptions<RedisRateLimitingOptions>>()
+        .Value;
+
+    var configuration = ConfigurationOptions.Parse(rateLimitOptions.Redis.ConnectionString!, true);
+    configuration.AbortOnConnectFail = false;
+    configuration.ClientName = "Licit.Gateway";
+
+    return ConnectionMultiplexer.Connect(configuration);
+});
+builder.Services.AddSingleton<IRedisRateLimiter, RedisTokenBucketRateLimiter>();
 
 builder.Services
     .AddReverseProxy()
@@ -11,6 +43,7 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+app.UseMiddleware<RedisRateLimitingMiddleware>();
 
 app.MapGet("/gateway", (IHostEnvironment environment) =>
 {
