@@ -34,6 +34,20 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(serviceProvider =>
 });
 builder.Services.AddSingleton<IRedisRateLimiter, RedisTokenBucketRateLimiter>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? ["http://localhost:3000", "http://localhost:5173"];
+
+        policy.WithOrigins(origins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services
     .AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
@@ -43,6 +57,7 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseMiddleware<RedisRateLimitingMiddleware>();
 
 app.MapGet("/gateway", (IHostEnvironment environment) =>
