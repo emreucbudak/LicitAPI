@@ -93,6 +93,7 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
+      - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
     ports:
       - "5142:8080"
     networks:

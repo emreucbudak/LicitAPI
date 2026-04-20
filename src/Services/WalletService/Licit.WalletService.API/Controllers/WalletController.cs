@@ -34,10 +34,15 @@ public class WalletController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("deposit")]
-    public async Task<IActionResult> Deposit([FromBody] DepositRequest request)
+    public async Task<IActionResult> Deposit(
+        [FromBody] DepositRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
     {
         var userId = GetCurrentUserId();
-        var result = await mediator.Send(new DepositFundsCommandRequest(userId, request.Amount));
+        var result = await mediator.Send(new DepositFundsCommandRequest(
+            userId,
+            request.Amount,
+            idempotencyKey ?? string.Empty));
         return Ok(result);
     }
 

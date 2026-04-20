@@ -4,5 +4,6 @@ namespace Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
 
 public record DepositFundsCommandRequest(
     Guid UserId,
-    decimal Amount
+    decimal Amount,
+    string IdempotencyKey
 ) : IRequest<DepositFundsCommandResponse>;

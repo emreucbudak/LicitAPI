@@ -10,14 +10,14 @@ public class DepositFundsCommandValidatorTests
     [Fact]
     public async Task ValidRequest_ShouldNotHaveErrors()
     {
-        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.NewGuid(), 100m));
+        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.NewGuid(), 100m, "deposit-key"));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
     public async Task UserId_WhenEmpty_ShouldHaveError()
     {
-        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.Empty, 100m));
+        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.Empty, 100m, "deposit-key"));
         result.ShouldHaveValidationErrorFor(x => x.UserId);
     }
 
@@ -26,7 +26,14 @@ public class DepositFundsCommandValidatorTests
     [InlineData(-1)]
     public async Task Amount_WhenNotPositive_ShouldHaveError(decimal amount)
     {
-        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.NewGuid(), amount));
+        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.NewGuid(), amount, "deposit-key"));
         result.ShouldHaveValidationErrorFor(x => x.Amount);
+    }
+
+    [Fact]
+    public async Task IdempotencyKey_WhenEmpty_ShouldHaveError()
+    {
+        var result = await _validator.TestValidateAsync(new DepositFundsCommandRequest(Guid.NewGuid(), 100m, string.Empty));
+        result.ShouldHaveValidationErrorFor(x => x.IdempotencyKey);
     }
 }
