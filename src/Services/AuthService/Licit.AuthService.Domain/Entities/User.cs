@@ -8,6 +8,7 @@ public class ApplicationUser : IdentityUser<Guid>, IHasTimestamps
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public bool IsActive { get; set; } = true;
+    public string? CurrentPasswordFingerprint { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }

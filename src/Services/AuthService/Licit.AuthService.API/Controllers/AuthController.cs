@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FlashMediator;
 using Licit.AuthService.Application.Features.CQRS.Auth.ForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
@@ -106,6 +107,26 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
+    [EnableRateLimiting("auth")]
+    [Authorize(Policy = AuthPolicies.AccessToken)]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Unauthorized();
+
+        var result = await mediator.Send(new ChangePasswordCommandRequest(
+            userId,
+            request.CurrentPassword,
+            request.NewPassword));
+
+        return Ok(result);
+    }
+
     [Authorize(Policy = AuthPolicies.AccessToken)]
     [HttpPost("revoke")]
     public async Task<IActionResult> Revoke([FromBody] RevokeTokenCommandRequest request)
@@ -133,3 +154,4 @@ public class AuthController(IMediator mediator) : ControllerBase
 }
 
 public record VerifyLoginRequest(string Email, string Code);
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

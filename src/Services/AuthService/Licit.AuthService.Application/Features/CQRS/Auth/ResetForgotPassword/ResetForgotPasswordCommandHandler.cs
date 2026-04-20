@@ -1,7 +1,9 @@
 using FlashMediator;
 using FluentValidation;
+using Licit.AuthService.Application.Common;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.Exceptions;
+using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword.Exceptions;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -12,8 +14,14 @@ public class ResetForgotPasswordCommandHandler(
     UserManager<ApplicationUser> userManager,
     ITokenService tokenService,
     IPasswordResetVerificationStore passwordResetVerificationStore,
+    IPasswordHistoryRepository passwordHistoryRepository,
+    IUserPasswordBloomService userPasswordBloomService,
+    IPasswordFingerprintService passwordFingerprintService,
+    IPasswordHasher<ApplicationUser> passwordHasher,
     IValidator<ResetForgotPasswordCommandRequest> validator) : IRequestHandler<ResetForgotPasswordCommandRequest, ResetForgotPasswordCommandResponse>
 {
+    private const int PasswordHistoryLimit = 3;
+
     public async Task<ResetForgotPasswordCommandResponse> Handle(ResetForgotPasswordCommandRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -46,14 +54,86 @@ public class ResetForgotPasswordCommandHandler(
             var user = await userManager.FindByIdAsync(userId.ToString());
             if (user is not null)
             {
+                var latestPasswordHistory = await passwordHistoryRepository.GetLatestByUserIdAsync(
+                    user.Id,
+                    PasswordHistoryLimit,
+                    cancellationToken);
+                var existingFingerprints = await userPasswordBloomService.GetFingerprintsAsync(user.Id, cancellationToken);
+                var newPasswordFingerprint = passwordFingerprintService.CreateFingerprint(request.NewPassword);
+                var mayContainExistingPassword = await userPasswordBloomService.MayContainAsync(
+                    user.Id,
+                    newPasswordFingerprint,
+                    cancellationToken);
+
+                if (PasswordReuseHelper.ShouldCheckHashes(user, latestPasswordHistory, existingFingerprints, mayContainExistingPassword)
+                    && PasswordReuseHelper.MatchesCurrentOrHistory(user, request.NewPassword, latestPasswordHistory, passwordHasher))
+                {
+                    throw new PasswordReuseNotAllowedException();
+                }
+
+                var currentPasswordHash = user.PasswordHash;
+                var currentPasswordFingerprint = user.CurrentPasswordFingerprint;
+
+                if (!string.IsNullOrWhiteSpace(currentPasswordHash))
+                {
+                    await passwordHistoryRepository.AddAsync(
+                        new PasswordHistory
+                        {
+                            Id = Guid.CreateVersion7(),
+                            UserId = user.Id,
+                            PasswordHash = currentPasswordHash
+                        },
+                        cancellationToken);
+
+                    var passwordHistoriesToRemove = latestPasswordHistory
+                        .Skip(PasswordHistoryLimit - 1)
+                        .ToArray();
+
+                    if (passwordHistoriesToRemove.Length > 0)
+                        passwordHistoryRepository.RemoveRange(passwordHistoriesToRemove);
+                }
+
+                user.CurrentPasswordFingerprint = newPasswordFingerprint;
+
                 var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
                 var resetResult = await userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
                 if (!resetResult.Succeeded)
+                {
+                    user.CurrentPasswordFingerprint = currentPasswordFingerprint;
                     throw new BusinessRuleException(string.Join(", ", resetResult.Errors.Select(e => e.Description)));
+                }
+
+                await passwordHistoryRepository.SaveChangesAsync(cancellationToken);
+
+                await userPasswordBloomService.SetFingerprintsAsync(
+                    user.Id,
+                    PasswordReuseHelper.BuildFingerprintWindow(
+                        newPasswordFingerprint,
+                        currentPasswordFingerprint,
+                        NormalizeFingerprintsForRotation(existingFingerprints, currentPasswordFingerprint)),
+                    cancellationToken);
             }
         }
 
         await passwordResetVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
         return new ResetForgotPasswordCommandResponse(true);
+    }
+
+    private static IReadOnlyList<string> NormalizeFingerprintsForRotation(
+        IReadOnlyList<string> existingFingerprints,
+        string? currentPasswordFingerprint)
+    {
+        if (string.IsNullOrWhiteSpace(currentPasswordFingerprint))
+            return existingFingerprints;
+
+        if (existingFingerprints.Count > 0
+            && string.Equals(existingFingerprints[0], currentPasswordFingerprint, StringComparison.Ordinal))
+        {
+            return existingFingerprints;
+        }
+
+        return new[] { currentPasswordFingerprint }
+            .Concat(existingFingerprints)
+            .ToArray();
     }
 }

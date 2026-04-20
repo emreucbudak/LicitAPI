@@ -13,7 +13,9 @@ public class RegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
     ITokenService tokenService,
     IPasswordHasher<ApplicationUser> passwordHasher,
+    IPasswordFingerprintService passwordFingerprintService,
     IRegisterVerificationStore registerVerificationStore,
+    IEmailBloomService emailBloomService,
     ILoginEmailPublisher loginEmailPublisher,
     AuthVerificationSettings authVerificationSettings,
     IValidator<RegisterCommandRequest> validator) : IRequestHandler<RegisterCommandRequest, RegisterCommandResponse>
@@ -24,13 +26,17 @@ public class RegisterCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var existingUser = await userManager.FindByEmailAsync(request.Email);
-        if (existingUser != null)
-            throw new EmailAlreadyExistsException();
-
         var email = request.Email.Trim();
         var firstName = request.FirstName.Trim();
         var lastName = request.LastName.Trim();
+
+        if (await emailBloomService.MayExistAsync(email, cancellationToken))
+        {
+            var existingUser = await userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+                throw new EmailAlreadyExistsException();
+        }
+
         var challengeId = Guid.NewGuid().ToString("N");
         var verificationCode = VerificationCodeHelper.GenerateSixDigitCode();
         var expiresAt = DateTime.UtcNow.AddMinutes(authVerificationSettings.RegisterVerificationCodeExpirationMinutes);
@@ -44,6 +50,7 @@ public class RegisterCommandHandler(
             LastName = lastName
         };
         var passwordHash = passwordHasher.HashPassword(pendingUser, request.Password);
+        var passwordFingerprint = passwordFingerprintService.CreateFingerprint(request.Password);
 
         await registerVerificationStore.StoreAsync(
             temporaryToken,
@@ -53,6 +60,7 @@ public class RegisterCommandHandler(
                 FirstName = firstName,
                 LastName = lastName,
                 PasswordHash = passwordHash,
+                PasswordFingerprint = passwordFingerprint,
                 Code = verificationCode,
                 ChallengeId = challengeId,
                 ExpiresAtUtc = expiresAt,

@@ -8,6 +8,8 @@ public class AuthDbContext : IdentityDbContext<ApplicationUser, ApplicationRole,
 {
     public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
 
+    public DbSet<PasswordHistory> PasswordHistories => Set<PasswordHistory>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

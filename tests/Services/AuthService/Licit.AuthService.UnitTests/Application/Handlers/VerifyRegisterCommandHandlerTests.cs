@@ -19,6 +19,8 @@ public class VerifyRegisterCommandHandlerTests
     private readonly UserManager<ApplicationUser> _userManager = UserManagerMockHelper.CreateMock();
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IRegisterVerificationStore _registerVerificationStore = Substitute.For<IRegisterVerificationStore>();
+    private readonly IEmailBloomService _emailBloomService = Substitute.For<IEmailBloomService>();
+    private readonly IUserPasswordBloomService _userPasswordBloomService = Substitute.For<IUserPasswordBloomService>();
     private readonly JwtSettings _jwtSettings = new() { Secret = "test", Issuer = "test", Audience = "test", AccessTokenExpirationMinutes = 15 };
     private readonly IValidator<VerifyRegisterCommandRequest> _validator = Substitute.For<IValidator<VerifyRegisterCommandRequest>>();
     private readonly VerifyRegisterCommandHandler _handler;
@@ -31,6 +33,8 @@ public class VerifyRegisterCommandHandlerTests
             _userManager,
             _tokenService,
             _registerVerificationStore,
+            _emailBloomService,
+            _userPasswordBloomService,
             _jwtSettings,
             _validator);
     }
@@ -46,6 +50,7 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
+            PasswordFingerprint = "password-fingerprint",
             Code = "123456",
             ChallengeId = "challenge-1",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
@@ -70,8 +75,16 @@ public class VerifyRegisterCommandHandlerTests
             && user.UserName == "test@test.com"
             && user.FirstName == "Ali"
             && user.LastName == "Veli"
-            && user.PasswordHash == "hashed-password"));
+            && user.PasswordHash == "hashed-password"
+            && user.CurrentPasswordFingerprint == "password-fingerprint"));
         await _userManager.Received(1).AddToRoleAsync(Arg.Any<ApplicationUser>(), "User");
+        await _emailBloomService.Received(1).AddAsync("test@test.com", Arg.Any<CancellationToken>());
+        await _userPasswordBloomService.Received(1).SetFingerprintsAsync(
+            Arg.Any<Guid>(),
+            Arg.Is<IReadOnlyCollection<string>>(fingerprints =>
+                fingerprints.Count == 1
+                && fingerprints.Contains("password-fingerprint")),
+            Arg.Any<CancellationToken>());
         await _registerVerificationStore.Received(1).RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
     }
 
@@ -86,6 +99,7 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
+            PasswordFingerprint = "password-fingerprint",
             Code = "654321",
             ChallengeId = "challenge-1",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
@@ -121,6 +135,7 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
+            PasswordFingerprint = "password-fingerprint",
             Code = "123456",
             ChallengeId = "challenge-1",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
@@ -135,6 +150,11 @@ public class VerifyRegisterCommandHandlerTests
         var act = () => _handler.Handle(new VerifyRegisterCommandRequest(temporaryToken, "123456"), CancellationToken.None);
 
         await act.Should().ThrowAsync<EmailAlreadyExistsException>();
+        await _emailBloomService.DidNotReceive().AddAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _userPasswordBloomService.DidNotReceive().SetFingerprintsAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<IReadOnlyCollection<string>>(),
+            Arg.Any<CancellationToken>());
         await _registerVerificationStore.Received(1).RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
     }
 }

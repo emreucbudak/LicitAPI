@@ -15,6 +15,8 @@ public class VerifyRegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
     ITokenService tokenService,
     IRegisterVerificationStore registerVerificationStore,
+    IEmailBloomService emailBloomService,
+    IUserPasswordBloomService userPasswordBloomService,
     JwtSettings jwtSettings,
     IValidator<VerifyRegisterCommandRequest> validator) : IRequestHandler<VerifyRegisterCommandRequest, VerifyRegisterCommandResponse>
 {
@@ -62,7 +64,8 @@ public class VerifyRegisterCommandHandler(
             Email = pendingRegistration.Email,
             FirstName = pendingRegistration.FirstName,
             LastName = pendingRegistration.LastName,
-            PasswordHash = pendingRegistration.PasswordHash
+            PasswordHash = pendingRegistration.PasswordHash,
+            CurrentPasswordFingerprint = pendingRegistration.PasswordFingerprint
         };
 
         var createResult = await userManager.CreateAsync(user);
@@ -72,6 +75,12 @@ public class VerifyRegisterCommandHandler(
         var roleResult = await userManager.AddToRoleAsync(user, "User");
         if (!roleResult.Succeeded)
             throw new UserCreationFailedException(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+
+        await emailBloomService.AddAsync(pendingRegistration.Email, cancellationToken);
+        await userPasswordBloomService.SetFingerprintsAsync(
+            user.Id,
+            new[] { pendingRegistration.PasswordFingerprint },
+            cancellationToken);
 
         await registerVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
 
