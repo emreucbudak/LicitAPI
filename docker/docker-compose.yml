@@ -130,12 +130,8 @@ services:
       - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
-      - SmtpSettings__Host=smtp.azurecomm.net
-      - SmtpSettings__Port=587
-      - SmtpSettings__Username=${AZURE_COMMUNICATION_SMTP_USERNAME}
-      - SmtpSettings__Password=${AZURE_COMMUNICATION_SMTP_PASSWORD}
-      - SmtpSettings__FromEmail=${AZURE_COMMUNICATION_FROM_EMAIL}
-      - SmtpSettings__FromName=${AZURE_COMMUNICATION_FROM_NAME:-Licit}
+      - AzureCommunicationEmail__ConnectionString=${AZURE_COMMUNICATION_CONNECTION_STRING}
+      - AzureCommunicationEmail__FromEmail=${AZURE_COMMUNICATION_FROM_EMAIL}
       - RabbitMq__Host=rabbitmq
       - RabbitMq__Port=5672
       - RabbitMq__Username=licit

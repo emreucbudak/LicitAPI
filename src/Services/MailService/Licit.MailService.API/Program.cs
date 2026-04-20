@@ -1,4 +1,5 @@
 using System.Text;
+using Azure.Communication.Email;
 using FlashMediator;
 using FluentValidation;
 using Licit.MailService.API.BackgroundServices;
@@ -39,9 +40,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// SMTP Settings
-var smtpSettings = builder.Configuration.GetSection("SmtpSettings").Get<SmtpSettings>()!;
-builder.Services.AddSingleton(smtpSettings);
+// Azure Communication Services Email Settings
+var emailSettings = builder.Configuration.GetSection("AzureCommunicationEmail").Get<AzureCommunicationEmailSettings>()!;
+builder.Services.AddSingleton(emailSettings);
+builder.Services.AddSingleton(_ => new EmailClient(emailSettings.ConnectionString));
 
 // Database
 builder.Services.AddDbContext<MailDbContext>(options =>
@@ -51,7 +53,7 @@ builder.Services.AddDbContext<MailDbContext>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Services
-builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IEmailSender, AzureCommunicationEmailSender>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(typeof(SendEmailCommandHandler).Assembly);
