@@ -40,7 +40,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__DefaultConnection=${AUTH_DB_CONNECTION_STRING}
-      - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
+      - JwtSettings__Secret=${JWT_SECRET}
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
       - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
@@ -65,7 +65,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__DefaultConnection=${TENDERING_DB_CONNECTION_STRING}
-      - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
+      - JwtSettings__Secret=${JWT_SECRET}
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
       - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
@@ -90,7 +90,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__DefaultConnection=${WALLET_DB_CONNECTION_STRING}
-      - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
+      - JwtSettings__Secret=${JWT_SECRET}
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
       - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
@@ -128,7 +128,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__DefaultConnection=${MAIL_DB_CONNECTION_STRING}
-      - JwtSettings__Secret=DockerOrtamiIcinGizliAnahtarEnAz32KarakterOlmalidir!
+      - JwtSettings__Secret=${JWT_SECRET}
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
       - AzureCommunicationEmail__ConnectionString=${AZURE_COMMUNICATION_CONNECTION_STRING}
