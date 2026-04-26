@@ -1,6 +1,3 @@
-using FluentValidation;
-using Licit.WalletService.Application.Exceptions;
-using Licit.WalletService.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Licit.WalletService.API.Middleware;
@@ -9,26 +6,24 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        var (statusCode, message) = exception switch
-        {
-            ValidationException validationEx => (400, string.Join(" | ", validationEx.Errors.Select(e => e.ErrorMessage))),
-            BaseException baseEx => (baseEx.StatusCode, baseEx.Message),
-            InvalidAmountException or InsufficientBalanceException or InsufficientFrozenBalanceException
-                => (422, exception.Message),
-            _ => (500, "Beklenmeyen bir hata oluştu.")
-        };
+        const int statusCode = StatusCodes.Status500InternalServerError;
+        var traceId = httpContext.TraceIdentifier;
+        var path = httpContext.Request.Path.Value;
 
-        if (statusCode >= 500)
-            logger.LogError(exception, "Sunucu hatası oluştu. TraceId: {TraceId}", httpContext.TraceIdentifier);
-        else if (exception is not ValidationException)
-            logger.LogWarning("İş kuralı hatası: {Message} TraceId: {TraceId}", message, httpContext.TraceIdentifier);
+        logger.LogError(
+            exception,
+            "Unhandled exception. TraceId: {TraceId} Path: {Path} ErrorType: {ErrorType} Message: {Message}",
+            traceId,
+            path,
+            exception.GetType().FullName,
+            exception.Message);
 
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(new
         {
-            error = message,
             statusCode,
-            traceId = httpContext.TraceIdentifier
+            message = "Beklenmeyen bir hata olustu.",
+            traceId
         }, cancellationToken);
 
         return true;

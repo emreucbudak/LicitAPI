@@ -2,6 +2,7 @@ using System.Text;
 using FlashMediator;
 using FluentValidation;
 using Licit.AuthService.API.Middleware;
+using Licit.AuthService.Application.Behaviors;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
@@ -113,11 +114,14 @@ builder.Services.AddSingleton<ILoginEmailPublisher>(sp => sp.GetRequiredService<
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
     typeof(LoginCommandHandler).Assembly);
+builder.Services.AddPipelineBehavior(typeof(LoggingPipelineBehavior<,>));
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(LoginCommandHandler).Assembly);
 
-// GlobalExceptionHandler
+// Exception handlers
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<ApplicationExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 

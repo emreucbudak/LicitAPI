@@ -4,6 +4,7 @@ using FlashMediator;
 using FluentValidation;
 using Licit.MailService.API.BackgroundServices;
 using Licit.MailService.API.Middleware;
+using Licit.MailService.Application.Behaviors;
 using Licit.MailService.Application.DTOs;
 using Licit.MailService.Application.Features.CQRS.Email.Send;
 using Licit.MailService.Application.Interfaces;
@@ -57,11 +58,14 @@ builder.Services.AddScoped<IEmailSender, AzureCommunicationEmailSender>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(typeof(SendEmailCommandHandler).Assembly);
+builder.Services.AddPipelineBehavior(typeof(LoggingPipelineBehavior<,>));
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(SendEmailCommandHandler).Assembly);
 
-// GlobalExceptionHandler
+// Exception Handlers
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<ApplicationExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 

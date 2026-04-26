@@ -1,6 +1,3 @@
-using FluentValidation;
-using Licit.TenderingService.Application.Exceptions;
-using Licit.TenderingService.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Licit.TenderingService.API.Middleware;
@@ -9,26 +6,26 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        var (statusCode, message) = exception switch
-        {
-            ValidationException validationEx => (400, string.Join(" | ", validationEx.Errors.Select(e => e.ErrorMessage))),
-            BaseException baseEx => (baseEx.StatusCode, baseEx.Message),
-            TenderNotEditableException or ActiveTenderDeletionException or InvalidStatusTransitionException
-                => (422, exception.Message),
-            _ => (500, "Beklenmeyen bir hata oluştu.")
-        };
+        const int statusCode = StatusCodes.Status500InternalServerError;
+        const string message = "Beklenmeyen bir hata olustu.";
 
-        if (statusCode >= 500)
-            logger.LogError(exception, "Sunucu hatası oluştu. TraceId: {TraceId}", httpContext.TraceIdentifier);
-        else if (exception is not ValidationException)
-            logger.LogWarning("İş kuralı hatası: {Message} TraceId: {TraceId}", message, httpContext.TraceIdentifier);
+        var traceId = httpContext.TraceIdentifier;
+        var path = httpContext.Request.Path.Value;
+
+        logger.LogError(
+            exception,
+            "Unhandled exception {ExceptionType} on {Path}. Message: {Message}. TraceId: {TraceId}",
+            exception.GetType().Name,
+            path,
+            exception.Message,
+            traceId);
 
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(new
         {
-            error = message,
             statusCode,
-            traceId = httpContext.TraceIdentifier
+            message,
+            traceId
         }, cancellationToken);
 
         return true;

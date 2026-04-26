@@ -2,6 +2,7 @@ using System.Text;
 using FlashMediator;
 using FluentValidation;
 using Licit.WalletService.API.Middleware;
+using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Infrastructure.Data;
@@ -59,11 +60,14 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
     typeof(DepositFundsCommandHandler).Assembly);
+builder.Services.AddPipelineBehavior(typeof(LoggingPipelineBehavior<,>));
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(DepositFundsCommandHandler).Assembly);
 
-// GlobalExceptionHandler
+// Exception handlers
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 

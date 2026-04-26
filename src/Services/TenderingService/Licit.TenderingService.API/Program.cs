@@ -59,12 +59,15 @@ builder.Services.AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<Rabbi
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(
     typeof(CreateTenderCommandHandler).Assembly);
+builder.Services.AddPipelineBehavior(typeof(LoggingPipelineBehavior<,>));
 builder.Services.AddPipelineBehavior(typeof(CachingPipelineBehavior<,>));
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTenderCommandHandler).Assembly);
 
-// GlobalExceptionHandler
+// Exception handlers
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
