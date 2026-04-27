@@ -1,7 +1,6 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Exceptions;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register.Exceptions;
@@ -17,11 +16,9 @@ namespace Licit.AuthService.UnitTests.Application.Handlers;
 public class VerifyRegisterCommandHandlerTests
 {
     private readonly UserManager<ApplicationUser> _userManager = UserManagerMockHelper.CreateMock();
-    private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IRegisterVerificationStore _registerVerificationStore = Substitute.For<IRegisterVerificationStore>();
     private readonly IEmailBloomService _emailBloomService = Substitute.For<IEmailBloomService>();
     private readonly IUserPasswordBloomService _userPasswordBloomService = Substitute.For<IUserPasswordBloomService>();
-    private readonly JwtSettings _jwtSettings = new() { Secret = "test", Issuer = "test", Audience = "test", AccessTokenExpirationMinutes = 15 };
     private readonly IValidator<VerifyRegisterCommandRequest> _validator = Substitute.For<IValidator<VerifyRegisterCommandRequest>>();
     private readonly VerifyRegisterCommandHandler _handler;
 
@@ -31,123 +28,139 @@ public class VerifyRegisterCommandHandlerTests
             .Returns(new ValidationResult());
         _handler = new VerifyRegisterCommandHandler(
             _userManager,
-            _tokenService,
             _registerVerificationStore,
             _emailBloomService,
             _userPasswordBloomService,
-            _jwtSettings,
             _validator);
     }
 
     [Fact]
-    public async Task Handle_ValidCode_ShouldCreateUserReturnTokensAndRemoveChallenge()
+    public async Task Handle_ValidCode_ShouldCreateUserReturnSuccessAndRemoveChallenge()
     {
-        var temporaryToken = "temporary-token";
-        var request = new VerifyRegisterCommandRequest(temporaryToken, "123456");
+        var email = "test@test.com";
+        var request = new VerifyRegisterCommandRequest(email, "123456");
         var pendingRegistration = new PendingRegistrationVerification
         {
-            Email = "test@test.com",
+            Email = email,
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
             PasswordFingerprint = "password-fingerprint",
             Code = "123456",
-            ChallengeId = "challenge-1",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 5
         };
 
-        _tokenService.ValidateTemporaryToken(temporaryToken, AuthTokenTypes.PendingRegister)
-            .Returns(new TemporaryTokenPayload("test@test.com", "challenge-1", AuthTokenTypes.PendingRegister));
-        _registerVerificationStore.GetAsync(temporaryToken, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
-        _userManager.FindByEmailAsync("test@test.com").Returns((ApplicationUser?)null);
+        _registerVerificationStore.GetAsync(email, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
+        _userManager.FindByEmailAsync(email).Returns((ApplicationUser?)null);
         _userManager.CreateAsync(Arg.Any<ApplicationUser>()).Returns(IdentityResult.Success);
         _userManager.AddToRoleAsync(Arg.Any<ApplicationUser>(), "User").Returns(IdentityResult.Success);
-        _tokenService.GenerateAccessTokenAsync(Arg.Any<ApplicationUser>()).Returns("access-token");
-        _tokenService.GenerateRefreshToken(Arg.Any<Guid>()).Returns("refresh-token");
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.AccessToken.Should().Be("access-token");
-        result.RefreshToken.Should().Be("refresh-token");
+        result.IsVerified.Should().BeTrue();
         await _userManager.Received(1).CreateAsync(Arg.Is<ApplicationUser>(user =>
-            user.Email == "test@test.com"
-            && user.UserName == "test@test.com"
+            user.Email == email
+            && user.UserName == email
             && user.FirstName == "Ali"
             && user.LastName == "Veli"
             && user.PasswordHash == "hashed-password"
             && user.CurrentPasswordFingerprint == "password-fingerprint"));
+        await _userManager.DidNotReceive().CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>());
         await _userManager.Received(1).AddToRoleAsync(Arg.Any<ApplicationUser>(), "User");
-        await _emailBloomService.Received(1).AddAsync("test@test.com", Arg.Any<CancellationToken>());
+        await _emailBloomService.Received(1).AddAsync(email, Arg.Any<CancellationToken>());
         await _userPasswordBloomService.Received(1).SetFingerprintsAsync(
             Arg.Any<Guid>(),
             Arg.Is<IReadOnlyCollection<string>>(fingerprints =>
                 fingerprints.Count == 1
                 && fingerprints.Contains("password-fingerprint")),
             Arg.Any<CancellationToken>());
-        await _registerVerificationStore.Received(1).RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
+        await _registerVerificationStore.Received(1).RemoveAsync(email, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WrongCode_ShouldDecrementAttemptsAndThrowUnauthorized()
     {
-        var temporaryToken = "temporary-token";
+        var email = "test@test.com";
         PendingRegistrationVerification? updatedVerification = null;
         var pendingRegistration = new PendingRegistrationVerification
         {
-            Email = "test@test.com",
+            Email = email,
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
             PasswordFingerprint = "password-fingerprint",
             Code = "654321",
-            ChallengeId = "challenge-1",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 5
         };
 
-        _tokenService.ValidateTemporaryToken(temporaryToken, AuthTokenTypes.PendingRegister)
-            .Returns(new TemporaryTokenPayload("test@test.com", "challenge-1", AuthTokenTypes.PendingRegister));
-        _registerVerificationStore.GetAsync(temporaryToken, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
+        _registerVerificationStore.GetAsync(email, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
         _registerVerificationStore
             .When(x => x.StoreAsync(
-                temporaryToken,
+                email,
                 Arg.Any<PendingRegistrationVerification>(),
                 Arg.Any<TimeSpan>(),
                 Arg.Any<CancellationToken>()))
             .Do(callInfo => updatedVerification = callInfo.ArgAt<PendingRegistrationVerification>(1));
 
-        var act = () => _handler.Handle(new VerifyRegisterCommandRequest(temporaryToken, "123456"), CancellationToken.None);
+        var act = () => _handler.Handle(new VerifyRegisterCommandRequest(email, "123456"), CancellationToken.None);
 
         await act.Should().ThrowAsync<UnauthorizedException>();
         updatedVerification.Should().NotBeNull();
         updatedVerification!.RemainingAttempts.Should().Be(4);
-        await _registerVerificationStore.DidNotReceive().RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
+        await _registerVerificationStore.DidNotReceive().RemoveAsync(email, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WrongCodeWithNoAttemptsLeft_ShouldRemoveChallengeAndThrowUnauthorized()
+    {
+        var email = "test@test.com";
+        var pendingRegistration = new PendingRegistrationVerification
+        {
+            Email = email,
+            FirstName = "Ali",
+            LastName = "Veli",
+            PasswordHash = "hashed-password",
+            PasswordFingerprint = "password-fingerprint",
+            Code = "654321",
+            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
+            RemainingAttempts = 1
+        };
+
+        _registerVerificationStore.GetAsync(email, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
+
+        var act = () => _handler.Handle(new VerifyRegisterCommandRequest(email, "123456"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnauthorizedException>();
+        await _registerVerificationStore.Received(1).RemoveAsync(email, Arg.Any<CancellationToken>());
+        await _registerVerificationStore.DidNotReceive().StoreAsync(
+            email,
+            Arg.Any<PendingRegistrationVerification>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_EmailAlreadyExists_ShouldRemoveChallengeAndThrow()
     {
-        var temporaryToken = "temporary-token";
+        var email = "test@test.com";
         var pendingRegistration = new PendingRegistrationVerification
         {
-            Email = "test@test.com",
+            Email = email,
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
             PasswordFingerprint = "password-fingerprint",
             Code = "123456",
-            ChallengeId = "challenge-1",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 5
         };
 
-        _tokenService.ValidateTemporaryToken(temporaryToken, AuthTokenTypes.PendingRegister)
-            .Returns(new TemporaryTokenPayload("test@test.com", "challenge-1", AuthTokenTypes.PendingRegister));
-        _registerVerificationStore.GetAsync(temporaryToken, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
-        _userManager.FindByEmailAsync("test@test.com").Returns(new ApplicationUser { Email = "test@test.com" });
+        _registerVerificationStore.GetAsync(email, Arg.Any<CancellationToken>()).Returns(pendingRegistration);
+        _userManager.FindByEmailAsync(email).Returns(new ApplicationUser { Email = email });
 
-        var act = () => _handler.Handle(new VerifyRegisterCommandRequest(temporaryToken, "123456"), CancellationToken.None);
+        var act = () => _handler.Handle(new VerifyRegisterCommandRequest(email, "123456"), CancellationToken.None);
 
         await act.Should().ThrowAsync<EmailAlreadyExistsException>();
         await _emailBloomService.DidNotReceive().AddAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -155,6 +168,6 @@ public class VerifyRegisterCommandHandlerTests
             Arg.Any<Guid>(),
             Arg.Any<IReadOnlyCollection<string>>(),
             Arg.Any<CancellationToken>());
-        await _registerVerificationStore.Received(1).RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
+        await _registerVerificationStore.Received(1).RemoveAsync(email, Arg.Any<CancellationToken>());
     }
 }

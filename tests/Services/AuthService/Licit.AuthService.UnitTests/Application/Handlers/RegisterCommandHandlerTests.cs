@@ -15,7 +15,6 @@ namespace Licit.AuthService.UnitTests.Application.Handlers;
 public class RegisterCommandHandlerTests
 {
     private readonly UserManager<ApplicationUser> _userManager = UserManagerMockHelper.CreateMock();
-    private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IPasswordHasher<ApplicationUser> _passwordHasher = Substitute.For<IPasswordHasher<ApplicationUser>>();
     private readonly IPasswordFingerprintService _passwordFingerprintService = Substitute.For<IPasswordFingerprintService>();
     private readonly IRegisterVerificationStore _registerVerificationStore = Substitute.For<IRegisterVerificationStore>();
@@ -31,7 +30,6 @@ public class RegisterCommandHandlerTests
             .Returns(new ValidationResult());
         _handler = new RegisterCommandHandler(
             _userManager,
-            _tokenService,
             _passwordHasher,
             _passwordFingerprintService,
             _registerVerificationStore,
@@ -42,17 +40,16 @@ public class RegisterCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ValidRequest_ShouldStorePendingRegistrationPublishEmailAndReturnTemporaryToken()
+    public async Task Handle_ValidRequest_ShouldStorePendingRegistrationByEmailPublishEmailAndReturnChallengeDetails()
     {
         PendingRegistrationVerification? storedVerification = null;
 
         _emailBloomService.MayExistAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(false);
         _passwordHasher.HashPassword(Arg.Any<ApplicationUser>(), "Password123!").Returns("hashed-password");
         _passwordFingerprintService.CreateFingerprint("Password123!").Returns("password-fingerprint");
-        _tokenService.GenerateTemporaryRegisterToken("test@test.com", Arg.Any<DateTime>(), Arg.Any<string>()).Returns("temporary-token");
         _registerVerificationStore
             .When(x => x.StoreAsync(
-                "temporary-token",
+                "test@test.com",
                 Arg.Any<PendingRegistrationVerification>(),
                 Arg.Any<TimeSpan>(),
                 Arg.Any<CancellationToken>()))
@@ -62,8 +59,8 @@ public class RegisterCommandHandlerTests
             new RegisterCommandRequest(" test@test.com ", "Password123!", " Ali ", " Veli "),
             CancellationToken.None);
 
-        result.TemporaryToken.Should().Be("temporary-token");
         result.Email.Should().Be("test@test.com");
+        result.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
         storedVerification.Should().NotBeNull();
         storedVerification!.Email.Should().Be("test@test.com");
         storedVerification.FirstName.Should().Be("Ali");
@@ -72,7 +69,6 @@ public class RegisterCommandHandlerTests
         storedVerification.PasswordFingerprint.Should().Be("password-fingerprint");
         storedVerification.RemainingAttempts.Should().Be(5);
         storedVerification.Code.Should().MatchRegex(@"^\d{6}$");
-        storedVerification.ChallengeId.Should().NotBeNullOrWhiteSpace();
         await _loginEmailPublisher.Received(1).PublishRegisterVerificationCodeAsync(
             "test@test.com",
             storedVerification.Code,
@@ -105,7 +101,6 @@ public class RegisterCommandHandlerTests
         _emailBloomService.MayExistAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(false);
         _passwordHasher.HashPassword(Arg.Any<ApplicationUser>(), "Password123!").Returns("hashed-password");
         _passwordFingerprintService.CreateFingerprint("Password123!").Returns("password-fingerprint");
-        _tokenService.GenerateTemporaryRegisterToken("test@test.com", Arg.Any<DateTime>(), Arg.Any<string>()).Returns("temporary-token");
         _loginEmailPublisher
             .PublishRegisterVerificationCodeAsync(
                 "test@test.com",
@@ -120,7 +115,7 @@ public class RegisterCommandHandlerTests
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        await _registerVerificationStore.Received(1).RemoveAsync("temporary-token", Arg.Any<CancellationToken>());
+        await _registerVerificationStore.Received(1).RemoveAsync("test@test.com", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -143,16 +138,15 @@ public class RegisterCommandHandlerTests
         _userManager.FindByEmailAsync("test@test.com").Returns((ApplicationUser?)null);
         _passwordHasher.HashPassword(Arg.Any<ApplicationUser>(), "Password123!").Returns("hashed-password");
         _passwordFingerprintService.CreateFingerprint("Password123!").Returns("password-fingerprint");
-        _tokenService.GenerateTemporaryRegisterToken("test@test.com", Arg.Any<DateTime>(), Arg.Any<string>()).Returns("temporary-token");
 
         var result = await _handler.Handle(
             new RegisterCommandRequest("test@test.com", "Password123!", "Ali", "Veli"),
             CancellationToken.None);
 
-        result.TemporaryToken.Should().Be("temporary-token");
+        result.Email.Should().Be("test@test.com");
         await _userManager.Received(1).FindByEmailAsync("test@test.com");
         await _registerVerificationStore.Received(1).StoreAsync(
-            "temporary-token",
+            "test@test.com",
             Arg.Any<PendingRegistrationVerification>(),
             Arg.Any<TimeSpan>(),
             Arg.Any<CancellationToken>());

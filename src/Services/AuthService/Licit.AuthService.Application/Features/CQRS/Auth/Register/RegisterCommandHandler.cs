@@ -11,7 +11,6 @@ namespace Licit.AuthService.Application.Features.CQRS.Auth.Register;
 
 public class RegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
-    ITokenService tokenService,
     IPasswordHasher<ApplicationUser> passwordHasher,
     IPasswordFingerprintService passwordFingerprintService,
     IRegisterVerificationStore registerVerificationStore,
@@ -37,11 +36,9 @@ public class RegisterCommandHandler(
                 throw new EmailAlreadyExistsException();
         }
 
-        var challengeId = Guid.NewGuid().ToString("N");
         var verificationCode = VerificationCodeHelper.GenerateSixDigitCode();
         var expiresAt = DateTime.UtcNow.AddMinutes(authVerificationSettings.RegisterVerificationCodeExpirationMinutes);
         var lifetime = expiresAt - DateTime.UtcNow;
-        var temporaryToken = tokenService.GenerateTemporaryRegisterToken(email, expiresAt, challengeId);
         var pendingUser = new ApplicationUser
         {
             UserName = email,
@@ -53,7 +50,7 @@ public class RegisterCommandHandler(
         var passwordFingerprint = passwordFingerprintService.CreateFingerprint(request.Password);
 
         await registerVerificationStore.StoreAsync(
-            temporaryToken,
+            email,
             new PendingRegistrationVerification
             {
                 Email = email,
@@ -62,7 +59,6 @@ public class RegisterCommandHandler(
                 PasswordHash = passwordHash,
                 PasswordFingerprint = passwordFingerprint,
                 Code = verificationCode,
-                ChallengeId = challengeId,
                 ExpiresAtUtc = expiresAt,
                 RemainingAttempts = authVerificationSettings.MaxVerificationAttempts
             },
@@ -80,10 +76,10 @@ public class RegisterCommandHandler(
         }
         catch
         {
-            await registerVerificationStore.RemoveAsync(temporaryToken, cancellationToken);
+            await registerVerificationStore.RemoveAsync(email, cancellationToken);
             throw;
         }
 
-        return new RegisterCommandResponse(temporaryToken, expiresAt, email);
+        return new RegisterCommandResponse(email, expiresAt);
     }
 }

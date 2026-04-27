@@ -1,7 +1,6 @@
 using FlashMediator;
 using FluentValidation;
 using Licit.AuthService.Application.Common;
-using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Exceptions;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register.Exceptions;
@@ -13,11 +12,9 @@ namespace Licit.AuthService.Application.Features.CQRS.Auth.VerifyRegister;
 
 public class VerifyRegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
-    ITokenService tokenService,
     IRegisterVerificationStore registerVerificationStore,
     IEmailBloomService emailBloomService,
     IUserPasswordBloomService userPasswordBloomService,
-    JwtSettings jwtSettings,
     IValidator<VerifyRegisterCommandRequest> validator) : IRequestHandler<VerifyRegisterCommandRequest, VerifyRegisterCommandResponse>
 {
     public async Task<VerifyRegisterCommandResponse> Handle(VerifyRegisterCommandRequest request, CancellationToken cancellationToken)
@@ -26,34 +23,31 @@ public class VerifyRegisterCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tokenPayload = tokenService.ValidateTemporaryToken(request.TemporaryToken, AuthTokenTypes.PendingRegister);
-        if (tokenPayload is null)
-            throw new UnauthorizedException("Gecersiz veya suresi dolmus kayit dogrulama tokeni.");
+        var email = request.Email.Trim();
 
-        var pendingRegistration = await registerVerificationStore.GetAsync(request.TemporaryToken, cancellationToken);
+        var pendingRegistration = await registerVerificationStore.GetAsync(email, cancellationToken);
         if (pendingRegistration is null || pendingRegistration.ExpiresAtUtc <= DateTime.UtcNow)
         {
-            await registerVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
+            await registerVerificationStore.RemoveAsync(email, cancellationToken);
             throw new UnauthorizedException("Gecersiz veya suresi dolmus kayit dogrulama istegi.");
         }
 
-        if (!string.Equals(tokenPayload.Email, pendingRegistration.Email, StringComparison.OrdinalIgnoreCase)
-            || !string.Equals(tokenPayload.TokenId, pendingRegistration.ChallengeId, StringComparison.Ordinal))
+        if (!string.Equals(email, pendingRegistration.Email, StringComparison.OrdinalIgnoreCase))
         {
-            await registerVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
+            await registerVerificationStore.RemoveAsync(email, cancellationToken);
             throw new UnauthorizedException("Kayit dogrulama oturumu gecersiz.");
         }
 
         if (!VerificationCodeHelper.CodesMatch(pendingRegistration.Code, request.Code))
         {
-            await HandleFailedAttemptAsync(request.TemporaryToken, pendingRegistration, cancellationToken);
+            await HandleFailedAttemptAsync(email, pendingRegistration, cancellationToken);
             throw new UnauthorizedException("Dogrulama kodu gecersiz.");
         }
 
         var existingUser = await userManager.FindByEmailAsync(pendingRegistration.Email);
         if (existingUser != null)
         {
-            await registerVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
+            await registerVerificationStore.RemoveAsync(email, cancellationToken);
             throw new EmailAlreadyExistsException();
         }
 
@@ -82,35 +76,31 @@ public class VerifyRegisterCommandHandler(
             new[] { pendingRegistration.PasswordFingerprint },
             cancellationToken);
 
-        await registerVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
+        await registerVerificationStore.RemoveAsync(email, cancellationToken);
 
-        var accessToken = await tokenService.GenerateAccessTokenAsync(user);
-        var refreshToken = tokenService.GenerateRefreshToken(user.Id);
-        var expiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes);
-
-        return new VerifyRegisterCommandResponse(accessToken, refreshToken, expiresAt);
+        return new VerifyRegisterCommandResponse(true);
     }
 
     private async Task HandleFailedAttemptAsync(
-        string temporaryToken,
+        string email,
         PendingRegistrationVerification pendingRegistration,
         CancellationToken cancellationToken)
     {
         var remainingAttempts = pendingRegistration.RemainingAttempts - 1;
         if (remainingAttempts <= 0)
         {
-            await registerVerificationStore.RemoveAsync(temporaryToken, cancellationToken);
+            await registerVerificationStore.RemoveAsync(email, cancellationToken);
             return;
         }
 
         var remainingLifetime = pendingRegistration.ExpiresAtUtc - DateTime.UtcNow;
         if (remainingLifetime <= TimeSpan.Zero)
         {
-            await registerVerificationStore.RemoveAsync(temporaryToken, cancellationToken);
+            await registerVerificationStore.RemoveAsync(email, cancellationToken);
             return;
         }
 
         pendingRegistration.RemainingAttempts = remainingAttempts;
-        await registerVerificationStore.StoreAsync(temporaryToken, pendingRegistration, remainingLifetime, cancellationToken);
+        await registerVerificationStore.StoreAsync(email, pendingRegistration, remainingLifetime, cancellationToken);
     }
 }

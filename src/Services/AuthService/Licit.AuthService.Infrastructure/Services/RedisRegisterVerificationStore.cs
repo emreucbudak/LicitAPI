@@ -10,7 +10,7 @@ public class RedisRegisterVerificationStore(IDistributedCache cache) : IRegister
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task StoreAsync(
-        string temporaryToken,
+        string email,
         PendingRegistrationVerification verification,
         TimeSpan lifetime,
         CancellationToken cancellationToken = default)
@@ -18,7 +18,7 @@ public class RedisRegisterVerificationStore(IDistributedCache cache) : IRegister
         var payload = JsonSerializer.Serialize(verification, JsonOptions);
 
         await cache.SetStringAsync(
-            BuildCacheKey(temporaryToken),
+            BuildCacheKey(email),
             payload,
             new DistributedCacheEntryOptions
             {
@@ -28,19 +28,19 @@ public class RedisRegisterVerificationStore(IDistributedCache cache) : IRegister
     }
 
     public async Task<PendingRegistrationVerification?> GetAsync(
-        string temporaryToken,
+        string email,
         CancellationToken cancellationToken = default)
     {
-        var payload = await cache.GetStringAsync(BuildCacheKey(temporaryToken), cancellationToken);
+        var payload = await cache.GetStringAsync(BuildCacheKey(email), cancellationToken);
         if (string.IsNullOrWhiteSpace(payload))
             return null;
 
         return JsonSerializer.Deserialize<PendingRegistrationVerification>(payload, JsonOptions);
     }
 
-    public Task RemoveAsync(string temporaryToken, CancellationToken cancellationToken = default) =>
-        cache.RemoveAsync(BuildCacheKey(temporaryToken), cancellationToken);
+    public Task RemoveAsync(string email, CancellationToken cancellationToken = default) =>
+        cache.RemoveAsync(BuildCacheKey(email), cancellationToken);
 
-    private static string BuildCacheKey(string temporaryToken) =>
-        $"auth:register-verification:{temporaryToken}";
+    private static string BuildCacheKey(string email) =>
+        $"auth:register-verification:{email.Trim().ToUpperInvariant()}";
 }

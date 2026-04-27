@@ -6,8 +6,9 @@ public class VerifyRegisterCommandValidator : AbstractValidator<VerifyRegisterCo
 {
     public VerifyRegisterCommandValidator()
     {
-        RuleFor(x => x.TemporaryToken)
-            .NotEmpty().WithMessage("Gecici dogrulama tokeni bos olamaz.");
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("E-posta adresi bos olamaz.")
+            .EmailAddress().WithMessage("Gecerli bir e-posta adresi giriniz.");
 
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Dogrulama kodu bos olamaz.")
