@@ -6,12 +6,15 @@ namespace Licit.TenderingService.Infrastructure.Data;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly TenderingDbContext _context;
+    private ICategoryRepository? _categories;
     private ITenderRepository? _tenders;
 
     public UnitOfWork(TenderingDbContext context)
     {
         _context = context;
     }
+
+    public ICategoryRepository Categories => _categories ??= new CategoryRepository(_context);
 
     public ITenderRepository Tenders => _tenders ??= new TenderRepository(_context);
 
