@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using Licit.Gateway.API.Dashboard;
 using Licit.Gateway.API.RateLimiting;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -33,6 +34,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(serviceProvider =>
     return ConnectionMultiplexer.Connect(configuration);
 });
 builder.Services.AddSingleton<IRedisRateLimiter, RedisTokenBucketRateLimiter>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
 {
@@ -87,6 +89,7 @@ app.MapGet("/gateway", (IHostEnvironment environment) =>
 });
 
 app.MapHealthChecks("/health");
+app.MapDashboardSummaryEndpoint();
 app.MapReverseProxy();
 
 app.Run();
