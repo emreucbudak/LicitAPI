@@ -31,11 +31,17 @@ public class TenderConfiguration : IEntityTypeConfiguration<Tender>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(t => t.Status);
+        builder.HasIndex(t => new { t.Status, t.EndDate, t.StartDate });
         builder.HasIndex(t => t.CreatedAt)
             .IsDescending();
         builder.HasIndex(t => new { t.CreatedByUserId, t.CreatedAt })
             .IsDescending(false, true);
         builder.HasIndex(t => t.EndDate);
+        builder.HasIndex(t => t.StartDate);
+        builder.HasIndex(t => t.Title);
+        builder.HasIndex(t => t.Description);
+        builder.HasIndex(t => new { t.Status, t.Title });
+        builder.HasIndex(t => new { t.Status, t.EndDate, t.Title });
         builder.HasIndex(t => t.CategoryId);
     }
 }

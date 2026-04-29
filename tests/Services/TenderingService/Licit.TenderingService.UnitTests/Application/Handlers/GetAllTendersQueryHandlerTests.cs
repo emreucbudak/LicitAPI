@@ -1,4 +1,5 @@
 using FluentAssertions;
+using FluentValidation;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
@@ -11,12 +12,13 @@ public class GetAllTendersQueryHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
+    private readonly IValidator<GetAllTendersQueryRequest> _validator = new GetAllTendersQueryValidator();
     private readonly GetAllTendersQueryHandler _handler;
 
     public GetAllTendersQueryHandlerTests()
     {
         _unitOfWork.Tenders.Returns(_tenderRepo);
-        _handler = new GetAllTendersQueryHandler(_unitOfWork);
+        _handler = new GetAllTendersQueryHandler(_unitOfWork, _validator);
     }
 
     [Fact]
@@ -65,6 +67,36 @@ public class GetAllTendersQueryHandlerTests
         dto.Status.Should().Be("Draft");
         dto.CategoryName.Should().Be("Test Kategori");
         dto.RuleCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_WithSearch_ShouldUseSearchRepositoryAndReturnPagination()
+    {
+        var tender = TenderTestFactory.CreateActiveTender();
+        SetCategory(tender, new Category("Elektronik"));
+
+        _tenderRepo.SearchAsync("laptop", true, 2, 10).Returns(new List<Tender> { tender });
+        _tenderRepo.GetSearchCountAsync("laptop", true).Returns(21);
+
+        var result = await _handler.Handle(
+            new GetAllTendersQueryRequest(Page: 2, PageSize: 10, Search: "laptop", ActiveOnly: true),
+            CancellationToken.None);
+
+        result.Tenders.Should().HaveCount(1);
+        result.TotalCount.Should().Be(21);
+        result.TotalPages.Should().Be(3);
+        result.HasNextPage.Should().BeTrue();
+        result.HasPreviousPage.Should().BeTrue();
+        _ = _tenderRepo.DidNotReceive().GetAllAsync(Arg.Any<int>(), Arg.Any<int>());
+        _ = _tenderRepo.DidNotReceive().GetCountAsync();
+    }
+
+    [Fact]
+    public async Task Handle_WithInvalidPageSize_ShouldThrowValidationException()
+    {
+        var act = () => _handler.Handle(new GetAllTendersQueryRequest(Page: 1, PageSize: 0), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ValidationException>();
     }
 
     private static void SetCategory(Tender tender, Category category)

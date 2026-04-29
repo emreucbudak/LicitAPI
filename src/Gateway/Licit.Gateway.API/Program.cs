@@ -1,11 +1,20 @@
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Licit.Gateway.API.Dashboard;
+using Licit.Gateway.API.Notifications;
 using Licit.Gateway.API.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"]!;
+var jwtAudience = builder.Configuration["JwtSettings:Audience"]!;
 
 builder.Services.AddOptions<RedisRateLimitingOptions>()
     .BindConfiguration("RateLimiting")
@@ -35,6 +44,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(serviceProvider =>
 });
 builder.Services.AddSingleton<IRedisRateLimiter, RedisTokenBucketRateLimiter>();
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<INotificationStore, InMemoryNotificationStore>();
+builder.Services.AddSingleton<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IUserIdProvider, NotificationUserIdProvider>();
+builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
@@ -64,6 +77,48 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrWhiteSpace(accessToken) &&
+                context.HttpContext.Request.Path.StartsWithSegments("/notification-hub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(NotificationAuth.AccessTokenPolicy, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireClaim("tokenType", NotificationAuth.AccessTokenType));
+});
+
 builder.Services
     .AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
@@ -75,6 +130,8 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseMiddleware<RedisRateLimitingMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/gateway", (IHostEnvironment environment) =>
 {
@@ -90,6 +147,9 @@ app.MapGet("/gateway", (IHostEnvironment environment) =>
 
 app.MapHealthChecks("/health");
 app.MapDashboardSummaryEndpoint();
+app.MapNotificationEndpoints();
+app.MapHub<NotificationHub>("/notification-hub")
+    .RequireAuthorization(NotificationAuth.AccessTokenPolicy);
 app.MapReverseProxy();
 
 app.Run();

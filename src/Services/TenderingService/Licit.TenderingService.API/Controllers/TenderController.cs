@@ -16,9 +16,13 @@ namespace Licit.TenderingService.API.Controllers;
 public class TenderController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] bool activeOnly = false)
     {
-        var result = await mediator.Send(new GetAllTendersQueryRequest(page, pageSize));
+        var result = await mediator.Send(new GetAllTendersQueryRequest(page, pageSize, search, activeOnly));
         return Ok(result);
     }
 

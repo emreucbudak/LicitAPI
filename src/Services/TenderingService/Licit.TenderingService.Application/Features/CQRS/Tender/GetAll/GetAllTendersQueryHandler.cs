@@ -1,15 +1,24 @@
 using FlashMediator;
+using FluentValidation;
 using Licit.TenderingService.Application.Interfaces;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
 
 public class GetAllTendersQueryHandler(
-    IUnitOfWork unitOfWork) : IRequestHandler<GetAllTendersQueryRequest, GetAllTendersQueryResponse>
+    IUnitOfWork unitOfWork,
+    IValidator<GetAllTendersQueryRequest> validator) : IRequestHandler<GetAllTendersQueryRequest, GetAllTendersQueryResponse>
 {
     public async Task<GetAllTendersQueryResponse> Handle(GetAllTendersQueryRequest request, CancellationToken cancellationToken)
     {
-        var totalCount = await unitOfWork.Tenders.GetCountAsync();
-        var tenders = await unitOfWork.Tenders.GetAllAsync(request.Page, request.PageSize);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var hasFilters = !string.IsNullOrWhiteSpace(request.Search) || request.ActiveOnly;
+        var totalCount = hasFilters
+            ? await unitOfWork.Tenders.GetSearchCountAsync(request.Search, request.ActiveOnly)
+            : await unitOfWork.Tenders.GetCountAsync();
+        var tenders = hasFilters
+            ? await unitOfWork.Tenders.SearchAsync(request.Search, request.ActiveOnly, request.Page, request.PageSize)
+            : await unitOfWork.Tenders.GetAllAsync(request.Page, request.PageSize);
 
         var dtos = tenders.Select(t => new TenderSummaryDto(
             t.Id,

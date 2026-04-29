@@ -5,5 +5,7 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
 
 public record GetAllTendersQueryRequest(
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    string? Search = null,
+    bool ActiveOnly = false
 ) : IRequest<GetAllTendersQueryResponse>, ICacheableQuery;
