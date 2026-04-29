@@ -11,5 +11,6 @@ public interface ITokenService
     string GenerateTemporaryPasswordResetToken(string email, DateTime expiresAt, string challengeId);
     string GenerateRefreshToken(Guid userId);
     Guid? ValidateRefreshToken(string refreshToken);
+    Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
     TemporaryTokenPayload? ValidateTemporaryToken(string temporaryToken, string expectedTokenType);
 }

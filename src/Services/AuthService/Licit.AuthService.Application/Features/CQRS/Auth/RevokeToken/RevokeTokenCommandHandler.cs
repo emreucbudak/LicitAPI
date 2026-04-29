@@ -17,5 +17,7 @@ public class RevokeTokenCommandHandler(
 
         _ = tokenService.ValidateRefreshToken(request.RefreshToken)
             ?? throw new InvalidTokenException();
+
+        await tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
     }
 }

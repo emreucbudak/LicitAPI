@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Services\AuthService\Licit.AuthService.Application\Licit.AuthService.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Services\AuthService\Licit.AuthService.Domain\Licit.AuthService.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Services\AuthService\Licit.AuthService.Infrastructure\Licit.AuthService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

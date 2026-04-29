@@ -6,19 +6,24 @@ using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Licit.AuthService.Infrastructure.Services;
 
 public class TokenService : ITokenService
 {
+    private const string RefreshTokenRevokedCacheKeyPrefix = "refresh-token:revoked:";
+
     private readonly JwtSettings _jwtSettings;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IDistributedCache _cache;
 
-    public TokenService(JwtSettings jwtSettings, UserManager<ApplicationUser> userManager)
+    public TokenService(JwtSettings jwtSettings, UserManager<ApplicationUser> userManager, IDistributedCache cache)
     {
         _jwtSettings = jwtSettings;
         _userManager = userManager;
+        _cache = cache;
     }
 
     public async Task<string> GenerateAccessTokenAsync(ApplicationUser user)
@@ -101,36 +106,29 @@ public class TokenService : ITokenService
 
     public Guid? ValidateRefreshToken(string refreshToken)
     {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
-
-        try
-        {
-            var principal = tokenHandler.ValidateToken(refreshToken, new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = _jwtSettings.Issuer,
-                ValidAudience = _jwtSettings.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ClockSkew = TimeSpan.Zero
-            }, out _);
-
-            var tokenType = principal.FindFirst("tokenType")?.Value;
-            if (tokenType != AuthTokenTypes.Refresh)
-                return null;
-
-            var sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-                      ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            return Guid.TryParse(sub, out var userId) ? userId : null;
-        }
-        catch
-        {
+        var payload = ValidateRefreshTokenPayload(refreshToken);
+        if (payload is null)
             return null;
-        }
+
+        var revokedMarker = _cache.GetString(GetRefreshTokenRevokedCacheKey(payload.TokenId));
+        return revokedMarker is null ? payload.UserId : null;
+    }
+
+    public async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+    {
+        var payload = ValidateRefreshTokenPayload(refreshToken);
+        if (payload is null)
+            return;
+
+        var expiresIn = payload.ExpiresAt - DateTime.UtcNow;
+        if (expiresIn <= TimeSpan.Zero)
+            return;
+
+        await _cache.SetStringAsync(
+            GetRefreshTokenRevokedCacheKey(payload.TokenId),
+            "1",
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = expiresIn },
+            cancellationToken);
     }
 
     public TemporaryTokenPayload? ValidateTemporaryToken(string temporaryToken, string expectedTokenType)
@@ -174,6 +172,51 @@ public class TokenService : ITokenService
         }
     }
 
+    private RefreshTokenPayload? ValidateRefreshTokenPayload(string refreshToken)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(refreshToken, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAudience = _jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ClockSkew = TimeSpan.Zero
+            }, out var validatedToken);
+
+            var tokenType = principal.FindFirst("tokenType")?.Value;
+            if (tokenType != AuthTokenTypes.Refresh)
+                return null;
+
+            var sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                      ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var tokenId = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+            if (!Guid.TryParse(sub, out var userId) || string.IsNullOrWhiteSpace(tokenId))
+                return null;
+
+            var expiresAt = validatedToken.ValidTo;
+            if (expiresAt <= DateTime.UtcNow)
+                return null;
+
+            return new RefreshTokenPayload(userId, tokenId, expiresAt);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string GetRefreshTokenRevokedCacheKey(string tokenId)
+        => $"{RefreshTokenRevokedCacheKeyPrefix}{tokenId}";
+
     private string GenerateTemporaryToken(
         string subject,
         string email,
@@ -202,4 +245,6 @@ public class TokenService : ITokenService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    private sealed record RefreshTokenPayload(Guid UserId, string TokenId, DateTime ExpiresAt);
 }

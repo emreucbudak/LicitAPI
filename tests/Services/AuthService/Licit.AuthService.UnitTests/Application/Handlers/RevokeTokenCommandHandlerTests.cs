@@ -29,6 +29,7 @@ public class RevokeTokenCommandHandlerTests
         var act = () => _handler.Handle(new RevokeTokenCommandRequest("valid-token"), CancellationToken.None);
 
         await act.Should().NotThrowAsync();
+        await _tokenService.Received(1).RevokeRefreshTokenAsync("valid-token", Arg.Any<CancellationToken>());
     }
 
     [Fact]

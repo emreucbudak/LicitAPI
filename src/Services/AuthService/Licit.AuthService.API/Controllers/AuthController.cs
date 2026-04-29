@@ -129,7 +129,6 @@ public class AuthController(IMediator mediator, UserManager<ApplicationUser> use
         return Ok(result);
     }
 
-    [Authorize(Policy = AuthPolicies.AccessToken)]
     [HttpPost("revoke")]
     public async Task<IActionResult> Revoke([FromBody] RevokeTokenCommandRequest request)
     {
