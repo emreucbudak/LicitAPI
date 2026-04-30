@@ -97,8 +97,11 @@ services:
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
       - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
+      - InternalGrpc__Port=5143
+      - InternalGrpc__ServiceKey=${WALLET_INTERNAL_GRPC_SERVICE_KEY:-licit-wallet-internal-dev-key}
     ports:
       - "5142:8080"
+      - "5143:5143"
     networks:
       - licit-network
 

@@ -21,6 +21,8 @@ public class FreezeFundsCommandHandlerTests
     public FreezeFundsCommandHandlerTests()
     {
         _unitOfWork.Wallets.Returns(_walletRepo);
+        _walletRepo.GetTransactionByWalletTypeAndReferenceAsync(Arg.Any<Guid>(), Arg.Any<TransactionType>(), Arg.Any<Guid>())
+            .Returns(Task.FromResult<WalletTransaction?>(null));
         _validator.ValidateAsync(Arg.Any<FreezeFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
         _handler = new FreezeFundsCommandHandler(_unitOfWork, _validator);
@@ -37,6 +39,36 @@ public class FreezeFundsCommandHandlerTests
 
         result.AvailableBalance.Should().Be(700m);
         result.FrozenBalance.Should().Be(300m);
+        result.IdempotentReplay.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_DuplicateReference_ShouldReturnExistingTransactionWithoutFreezingAgain()
+    {
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
+        var refId = Guid.NewGuid();
+        var existingTransaction = new WalletTransaction(
+            wallet.Id,
+            TransactionType.Freeze,
+            300m,
+            "existing freeze",
+            refId,
+            700m,
+            300m);
+
+        _walletRepo.GetByUserIdAsync(wallet.UserId).Returns(wallet);
+        _walletRepo.GetTransactionByWalletTypeAndReferenceAsync(wallet.Id, TransactionType.Freeze, refId)
+            .Returns(Task.FromResult<WalletTransaction?>(existingTransaction));
+
+        var result = await _handler.Handle(new FreezeFundsCommandRequest(wallet.UserId, 300m, refId, null), CancellationToken.None);
+
+        result.TransactionId.Should().Be(existingTransaction.Id);
+        result.AvailableBalance.Should().Be(700m);
+        result.FrozenBalance.Should().Be(300m);
+        result.IdempotentReplay.Should().BeTrue();
+        wallet.Balance.Should().Be(1000m);
+        wallet.FrozenBalance.Should().Be(0m);
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

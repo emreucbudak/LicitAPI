@@ -21,6 +21,8 @@ public class DeductFundsCommandHandlerTests
     public DeductFundsCommandHandlerTests()
     {
         _unitOfWork.Wallets.Returns(_walletRepo);
+        _walletRepo.GetTransactionByWalletTypeAndReferenceAsync(Arg.Any<Guid>(), Arg.Any<TransactionType>(), Arg.Any<Guid>())
+            .Returns(Task.FromResult<WalletTransaction?>(null));
         _validator.ValidateAsync(Arg.Any<DeductFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
         _handler = new DeductFundsCommandHandler(_unitOfWork, _validator);
@@ -36,6 +38,36 @@ public class DeductFundsCommandHandlerTests
 
         result.AvailableBalance.Should().Be(500m);
         result.FrozenBalance.Should().Be(0m);
+        result.IdempotentReplay.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_DuplicateReference_ShouldReturnExistingTransactionWithoutDeductingAgain()
+    {
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500m, 300m);
+        var refId = Guid.NewGuid();
+        var existingTransaction = new WalletTransaction(
+            wallet.Id,
+            TransactionType.Deduct,
+            300m,
+            "existing deduct",
+            refId,
+            500m,
+            0m);
+
+        _walletRepo.GetByUserIdAsync(wallet.UserId).Returns(wallet);
+        _walletRepo.GetTransactionByWalletTypeAndReferenceAsync(wallet.Id, TransactionType.Deduct, refId)
+            .Returns(Task.FromResult<WalletTransaction?>(existingTransaction));
+
+        var result = await _handler.Handle(new DeductFundsCommandRequest(wallet.UserId, 300m, refId, null), CancellationToken.None);
+
+        result.TransactionId.Should().Be(existingTransaction.Id);
+        result.AvailableBalance.Should().Be(500m);
+        result.FrozenBalance.Should().Be(0m);
+        result.IdempotentReplay.Should().BeTrue();
+        wallet.Balance.Should().Be(500m);
+        wallet.FrozenBalance.Should().Be(300m);
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

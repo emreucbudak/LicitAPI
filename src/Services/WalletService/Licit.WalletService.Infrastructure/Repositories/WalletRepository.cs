@@ -19,6 +19,11 @@ public class WalletRepository : IWalletRepository
 
     public void Update(Wallet wallet) => _context.Wallets.Update(wallet);
 
+    public async Task<WalletTransaction?> GetTransactionByWalletTypeAndReferenceAsync(Guid walletId, TransactionType type, Guid referenceId) =>
+        await _context.WalletTransactions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.WalletId == walletId && t.Type == type && t.ReferenceId == referenceId);
+
     public async Task<IEnumerable<WalletTransaction>> GetTransactionsByWalletIdAsync(Guid walletId, int page, int pageSize) =>
         await _context.WalletTransactions
             .AsNoTracking()

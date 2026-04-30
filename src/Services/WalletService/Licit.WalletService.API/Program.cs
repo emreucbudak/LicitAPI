@@ -1,6 +1,7 @@
 using System.Text;
 using FlashMediator;
 using FluentValidation;
+using Licit.WalletService.API.Grpc;
 using Licit.WalletService.API.Middleware;
 using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
@@ -8,6 +9,7 @@ using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Infrastructure.Data;
 using Licit.WalletService.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -15,6 +17,18 @@ using Serilog;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var internalGrpcPort = builder.Configuration.GetValue<int?>("InternalGrpc:Port");
+if (internalGrpcPort is > 0)
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(internalGrpcPort.Value, listenOptions =>
+        {
+            listenOptions.Protocols = HttpProtocols.Http2;
+        });
+    });
+}
 
 // Serilog
 builder.Host.UseSerilog((context, configuration) =>
@@ -94,6 +108,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddGrpc();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -140,6 +155,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapGrpcService<WalletInternalGrpcService>();
 app.MapControllers();
 app.MapHealthChecks("/health");
 

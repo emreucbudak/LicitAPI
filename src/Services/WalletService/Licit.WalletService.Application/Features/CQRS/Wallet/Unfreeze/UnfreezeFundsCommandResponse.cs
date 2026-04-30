@@ -4,5 +4,6 @@ public record UnfreezeFundsCommandResponse(
     Guid TransactionId,
     decimal AvailableBalance,
     decimal FrozenBalance,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool IdempotentReplay = false
 );

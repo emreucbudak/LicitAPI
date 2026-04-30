@@ -29,5 +29,8 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
 
         builder.HasIndex(t => new { t.WalletId, t.CreatedAt })
             .IsDescending(false, true);
+
+        builder.HasIndex(t => new { t.WalletId, t.Type, t.ReferenceId })
+            .IsUnique();
     }
 }

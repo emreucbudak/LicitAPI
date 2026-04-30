@@ -4,6 +4,7 @@ using Licit.WalletService.Application.Exceptions;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Unfreeze.Exceptions;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
 using Licit.WalletService.Application.Interfaces;
+using Licit.WalletService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Unfreeze;
@@ -21,6 +22,19 @@ public class UnfreezeFundsCommandHandler(
         var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
+        var existingTransaction = await unitOfWork.Wallets.GetTransactionByWalletTypeAndReferenceAsync(
+            wallet.Id,
+            TransactionType.Unfreeze,
+            request.ReferenceId);
+
+        if (existingTransaction is not null)
+            return new UnfreezeFundsCommandResponse(
+                existingTransaction.Id,
+                existingTransaction.BalanceAfter,
+                existingTransaction.FrozenBalanceAfter,
+                existingTransaction.CreatedAt,
+                true);
+
         try
         {
             var transaction = wallet.Unfreeze(request.Amount, request.ReferenceId, request.Description);
@@ -28,5 +42,22 @@ public class UnfreezeFundsCommandHandler(
             return new UnfreezeFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }
+        catch (DbUpdateException)
+        {
+            existingTransaction = await unitOfWork.Wallets.GetTransactionByWalletTypeAndReferenceAsync(
+                wallet.Id,
+                TransactionType.Unfreeze,
+                request.ReferenceId);
+
+            if (existingTransaction is not null)
+                return new UnfreezeFundsCommandResponse(
+                    existingTransaction.Id,
+                    existingTransaction.BalanceAfter,
+                    existingTransaction.FrozenBalanceAfter,
+                    existingTransaction.CreatedAt,
+                    true);
+
+            throw;
+        }
     }
 }
