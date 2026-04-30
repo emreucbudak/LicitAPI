@@ -1,5 +1,5 @@
 using FluentValidation.TestHelper;
-using Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById;
 using Licit.TenderingService.Application.Validators.Tender.Queries.GetById;
 
 namespace Licit.TenderingService.UnitTests.Application.Validators;

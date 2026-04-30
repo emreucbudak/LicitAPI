@@ -1,12 +1,12 @@
 using System.Security.Claims;
 using FlashMediator;
-using Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
-using Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
-using Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Update;
-using Licit.TenderingService.Application.Features.CQRS.Tender.UploadImage;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.ChangeStatus;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Delete;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetAll;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Update;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.UploadImage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

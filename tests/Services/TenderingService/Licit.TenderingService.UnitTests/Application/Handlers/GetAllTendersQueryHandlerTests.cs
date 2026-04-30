@@ -1,6 +1,6 @@
 using FluentAssertions;
 using FluentValidation;
-using Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetAll;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Application.Validators.Tender.Queries.GetAll;
 using Licit.TenderingService.Domain.Entities;

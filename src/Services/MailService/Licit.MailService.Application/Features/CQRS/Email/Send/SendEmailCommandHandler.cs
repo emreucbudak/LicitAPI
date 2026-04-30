@@ -8,6 +8,7 @@ namespace Licit.MailService.Application.Features.CQRS.Email.Send;
 
 public class SendEmailCommandHandler(
     IUnitOfWork unitOfWork,
+    IEmailRepository emailRepository,
     IEmailSender emailSender,
     IValidator<SendEmailCommandRequest> validator) : IRequestHandler<SendEmailCommandRequest, SendEmailCommandResponse>
 {
@@ -18,7 +19,7 @@ public class SendEmailCommandHandler(
             throw new ValidationException(validationResult.Errors);
 
         var email = new EmailMessage(request.To, request.Subject, request.Body);
-        unitOfWork.Emails.Add(email);
+        emailRepository.Add(email);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         try

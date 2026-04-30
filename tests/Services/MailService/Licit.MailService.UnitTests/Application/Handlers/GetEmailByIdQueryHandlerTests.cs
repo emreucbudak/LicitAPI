@@ -11,17 +11,15 @@ namespace Licit.MailService.UnitTests.Application.Handlers;
 
 public class GetEmailByIdQueryHandlerTests
 {
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IEmailRepository _emailRepo = Substitute.For<IEmailRepository>();
     private readonly IValidator<GetEmailByIdQueryRequest> _validator = Substitute.For<IValidator<GetEmailByIdQueryRequest>>();
     private readonly GetEmailByIdQueryHandler _handler;
 
     public GetEmailByIdQueryHandlerTests()
     {
-        _unitOfWork.Emails.Returns(_emailRepo);
         _validator.ValidateAsync(Arg.Any<GetEmailByIdQueryRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new GetEmailByIdQueryHandler(_unitOfWork, _validator);
+        _handler = new GetEmailByIdQueryHandler(_emailRepo, _validator);
     }
 
     [Fact]

@@ -1,7 +1,7 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
 using NSubstitute;

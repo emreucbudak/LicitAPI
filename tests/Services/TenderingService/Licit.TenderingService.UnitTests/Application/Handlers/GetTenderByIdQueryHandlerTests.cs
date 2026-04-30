@@ -1,8 +1,8 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
-using Licit.TenderingService.Application.Features.CQRS.Tender.GetById.Exceptions;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
 using Licit.TenderingService.UnitTests.Common;

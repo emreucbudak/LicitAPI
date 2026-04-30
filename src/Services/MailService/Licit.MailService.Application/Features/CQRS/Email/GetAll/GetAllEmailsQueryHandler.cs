@@ -5,7 +5,7 @@ using Licit.MailService.Application.Interfaces;
 namespace Licit.MailService.Application.Features.CQRS.Email.GetAll;
 
 public class GetAllEmailsQueryHandler(
-    IUnitOfWork unitOfWork,
+    IEmailRepository emailRepository,
     IValidator<GetAllEmailsQueryRequest> validator) : IRequestHandler<GetAllEmailsQueryRequest, GetAllEmailsQueryResponse>
 {
     public async Task<GetAllEmailsQueryResponse> Handle(GetAllEmailsQueryRequest request, CancellationToken cancellationToken)
@@ -14,8 +14,8 @@ public class GetAllEmailsQueryHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var totalCount = await unitOfWork.Emails.GetCountAsync();
-        var emails = await unitOfWork.Emails.GetAllAsync(request.Page, request.PageSize);
+        var totalCount = await emailRepository.GetCountAsync();
+        var emails = await emailRepository.GetAllAsync(request.Page, request.PageSize);
 
         var dtos = emails.Select(e => new EmailSummaryDto(
             e.Id,

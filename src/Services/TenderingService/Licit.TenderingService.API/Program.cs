@@ -1,9 +1,9 @@
 using System.Text;
 using FlashMediator;
 using FluentValidation;
-using Licit.TenderingService.API.Middleware;
+using Licit.TenderingService.API.ExceptionHandlers;
 using Licit.TenderingService.Application.Behaviors;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Infrastructure.Data;
 using Licit.TenderingService.Infrastructure.Repositories;

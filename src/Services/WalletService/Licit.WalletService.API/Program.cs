@@ -2,7 +2,7 @@ using System.Text;
 using FlashMediator;
 using FluentValidation;
 using Licit.WalletService.API.Grpc;
-using Licit.WalletService.API.Middleware;
+using Licit.WalletService.API.ExceptionHandlers;
 using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
 using Licit.WalletService.Application.Interfaces;

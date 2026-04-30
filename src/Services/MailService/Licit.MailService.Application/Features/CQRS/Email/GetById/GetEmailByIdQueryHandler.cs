@@ -6,7 +6,7 @@ using Licit.MailService.Application.Interfaces;
 namespace Licit.MailService.Application.Features.CQRS.Email.GetById;
 
 public class GetEmailByIdQueryHandler(
-    IUnitOfWork unitOfWork,
+    IEmailRepository emailRepository,
     IValidator<GetEmailByIdQueryRequest> validator) : IRequestHandler<GetEmailByIdQueryRequest, GetEmailByIdQueryResponse>
 {
     public async Task<GetEmailByIdQueryResponse> Handle(GetEmailByIdQueryRequest request, CancellationToken cancellationToken)
@@ -15,7 +15,7 @@ public class GetEmailByIdQueryHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var email = await unitOfWork.Emails.GetByIdAsync(request.Id)
+        var email = await emailRepository.GetByIdAsync(request.Id)
             ?? throw new EmailNotFoundException(request.Id);
 
         return new GetEmailByIdQueryResponse(

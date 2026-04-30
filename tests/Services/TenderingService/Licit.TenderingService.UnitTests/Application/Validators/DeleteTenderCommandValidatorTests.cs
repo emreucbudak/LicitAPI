@@ -1,5 +1,5 @@
 using FluentValidation.TestHelper;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Delete;
 using Licit.TenderingService.Application.Validators.Tender.Commands.Delete;
 
 namespace Licit.TenderingService.UnitTests.Application.Validators;

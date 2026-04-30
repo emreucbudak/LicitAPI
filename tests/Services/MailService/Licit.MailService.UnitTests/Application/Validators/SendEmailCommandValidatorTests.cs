@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
 using Licit.MailService.Application.Features.CQRS.Email.Send;
+using Licit.MailService.Application.Validators.Email.Commands.Send;
 
 namespace Licit.MailService.UnitTests.Application.Validators;
 

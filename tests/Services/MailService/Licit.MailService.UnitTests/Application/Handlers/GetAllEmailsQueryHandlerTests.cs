@@ -10,17 +10,15 @@ namespace Licit.MailService.UnitTests.Application.Handlers;
 
 public class GetAllEmailsQueryHandlerTests
 {
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IEmailRepository _emailRepo = Substitute.For<IEmailRepository>();
     private readonly IValidator<GetAllEmailsQueryRequest> _validator = Substitute.For<IValidator<GetAllEmailsQueryRequest>>();
     private readonly GetAllEmailsQueryHandler _handler;
 
     public GetAllEmailsQueryHandlerTests()
     {
-        _unitOfWork.Emails.Returns(_emailRepo);
         _validator.ValidateAsync(Arg.Any<GetAllEmailsQueryRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new GetAllEmailsQueryHandler(_unitOfWork, _validator);
+        _handler = new GetAllEmailsQueryHandler(_emailRepo, _validator);
     }
 
     [Fact]

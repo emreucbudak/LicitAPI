@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 
 namespace Licit.TenderingService.Application.Validators.Tender.Commands.Create;
 

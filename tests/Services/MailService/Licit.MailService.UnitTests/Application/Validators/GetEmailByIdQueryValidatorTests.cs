@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
 using Licit.MailService.Application.Features.CQRS.Email.GetById;
+using Licit.MailService.Application.Validators.Email.Queries.GetById;
 
 namespace Licit.MailService.UnitTests.Application.Validators;
 

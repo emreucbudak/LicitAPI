@@ -20,10 +20,9 @@ public class SendEmailCommandHandlerTests
 
     public SendEmailCommandHandlerTests()
     {
-        _unitOfWork.Emails.Returns(_emailRepo);
         _validator.ValidateAsync(Arg.Any<SendEmailCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new SendEmailCommandHandler(_unitOfWork, _emailSender, _validator);
+        _handler = new SendEmailCommandHandler(_unitOfWork, _emailRepo, _emailSender, _validator);
     }
 
     [Fact]

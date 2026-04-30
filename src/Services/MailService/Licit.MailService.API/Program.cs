@@ -3,12 +3,13 @@ using Azure.Communication.Email;
 using FlashMediator;
 using FluentValidation;
 using Licit.MailService.API.BackgroundServices;
-using Licit.MailService.API.Middleware;
+using Licit.MailService.API.ExceptionHandlers;
 using Licit.MailService.Application.Behaviors;
 using Licit.MailService.Application.DTOs;
 using Licit.MailService.Application.Features.CQRS.Email.Send;
 using Licit.MailService.Application.Interfaces;
 using Licit.MailService.Infrastructure.Data;
+using Licit.MailService.Infrastructure.Repositories;
 using Licit.MailService.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +53,7 @@ builder.Services.AddDbContext<MailDbContext>(options =>
 
 // Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 // Services
 builder.Services.AddScoped<IEmailSender, AzureCommunicationEmailSender>();
