@@ -7,5 +7,6 @@ public record GetAllTendersQueryRequest(
     int Page = 1,
     int PageSize = 20,
     string? Search = null,
-    bool ActiveOnly = false
+    bool ActiveOnly = false,
+    Guid? CategoryId = null
 ) : IRequest<GetAllTendersQueryResponse>, ICacheableQuery;
