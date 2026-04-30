@@ -20,9 +20,10 @@ public class TenderController(IMediator mediator) : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
-        [FromQuery] bool activeOnly = false)
+        [FromQuery] bool activeOnly = false,
+        [FromQuery] Guid? categoryId = null)
     {
-        var result = await mediator.Send(new GetAllTendersQueryRequest(page, pageSize, search, activeOnly));
+        var result = await mediator.Send(new GetAllTendersQueryRequest(page, pageSize, search, activeOnly, categoryId));
         return Ok(result);
     }
 

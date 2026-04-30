@@ -75,8 +75,8 @@ public class GetAllTendersQueryHandlerTests
         var tender = TenderTestFactory.CreateActiveTender();
         SetCategory(tender, new Category("Elektronik"));
 
-        _tenderRepo.SearchAsync("laptop", true, 2, 10).Returns(new List<Tender> { tender });
-        _tenderRepo.GetSearchCountAsync("laptop", true).Returns(21);
+        _tenderRepo.SearchAsync("laptop", true, null, 2, 10).Returns(new List<Tender> { tender });
+        _tenderRepo.GetSearchCountAsync("laptop", true, null).Returns(21);
 
         var result = await _handler.Handle(
             new GetAllTendersQueryRequest(Page: 2, PageSize: 10, Search: "laptop", ActiveOnly: true),
@@ -87,6 +87,26 @@ public class GetAllTendersQueryHandlerTests
         result.TotalPages.Should().Be(3);
         result.HasNextPage.Should().BeTrue();
         result.HasPreviousPage.Should().BeTrue();
+        _ = _tenderRepo.DidNotReceive().GetAllAsync(Arg.Any<int>(), Arg.Any<int>());
+        _ = _tenderRepo.DidNotReceive().GetCountAsync();
+    }
+
+    [Fact]
+    public async Task Handle_WithCategoryFilter_ShouldPassCategoryIdToSearchRepository()
+    {
+        var categoryId = Guid.NewGuid();
+        var tender = TenderTestFactory.CreateActiveTender();
+        SetCategory(tender, new Category("Elektronik"));
+
+        _tenderRepo.SearchAsync(null, false, categoryId, 1, 20).Returns(new List<Tender> { tender });
+        _tenderRepo.GetSearchCountAsync(null, false, categoryId).Returns(1);
+
+        var result = await _handler.Handle(
+            new GetAllTendersQueryRequest(Page: 1, PageSize: 20, CategoryId: categoryId),
+            CancellationToken.None);
+
+        result.Tenders.Should().HaveCount(1);
+        result.TotalCount.Should().Be(1);
         _ = _tenderRepo.DidNotReceive().GetAllAsync(Arg.Any<int>(), Arg.Any<int>());
         _ = _tenderRepo.DidNotReceive().GetCountAsync();
     }

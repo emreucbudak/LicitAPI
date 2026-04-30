@@ -12,12 +12,15 @@ public class GetAllTendersQueryHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var hasFilters = !string.IsNullOrWhiteSpace(request.Search) || request.ActiveOnly;
+        var hasFilters =
+            !string.IsNullOrWhiteSpace(request.Search) ||
+            request.ActiveOnly ||
+            request.CategoryId.HasValue;
         var totalCount = hasFilters
-            ? await unitOfWork.Tenders.GetSearchCountAsync(request.Search, request.ActiveOnly)
+            ? await unitOfWork.Tenders.GetSearchCountAsync(request.Search, request.ActiveOnly, request.CategoryId)
             : await unitOfWork.Tenders.GetCountAsync();
         var tenders = hasFilters
-            ? await unitOfWork.Tenders.SearchAsync(request.Search, request.ActiveOnly, request.Page, request.PageSize)
+            ? await unitOfWork.Tenders.SearchAsync(request.Search, request.ActiveOnly, request.CategoryId, request.Page, request.PageSize)
             : await unitOfWork.Tenders.GetAllAsync(request.Page, request.PageSize);
 
         var dtos = tenders.Select(t => new TenderSummaryDto(
