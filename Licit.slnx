@@ -28,6 +28,9 @@
     <Project Path="src/Services/MailService/Licit.MailService.Domain/Licit.MailService.Domain.csproj" />
     <Project Path="src/Services/MailService/Licit.MailService.Infrastructure/Licit.MailService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Services/NotificationService/">
+    <Project Path="src/Services/NotificationService/Licit.NotificationService.API/Licit.NotificationService.API.csproj" />
+  </Folder>
   <Folder Name="/.github/" />
   <Folder Name="/.github/workflows/">
     <File Path=".github/workflows/ci.yml" />
