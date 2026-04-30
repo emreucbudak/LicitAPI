@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 
-namespace Licit.Gateway.API.Notifications;
+namespace Licit.NotificationService.API.Notifications;
 
 public sealed class NotificationService(
     INotificationStore store,
@@ -19,7 +19,9 @@ public sealed class NotificationService(
     public Task<int> GetUnreadCountAsync(string userId, CancellationToken cancellationToken) =>
         store.GetUnreadCountAsync(userId, cancellationToken);
 
-    public async Task<NotificationDto?> PublishAsync(CreateNotificationRequest request, CancellationToken cancellationToken)
+    public async Task<NotificationDto?> PublishAsync(
+        CreateNotificationRequest request,
+        CancellationToken cancellationToken)
     {
         var item = await store.AddAsync(request, cancellationToken);
         if (item is null)

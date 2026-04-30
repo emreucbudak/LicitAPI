@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace Licit.Gateway.API.Notifications;
+namespace Licit.NotificationService.API.Notifications;
 
 public static class NotificationEndpointExtensions
 {
@@ -9,8 +9,10 @@ public static class NotificationEndpointExtensions
         var group = endpoints.MapGroup("/api/notifications")
             .RequireAuthorization(NotificationAuth.AccessTokenPolicy);
 
+        group.MapGet("", GetNotificationsAsync);
         group.MapGet("/", GetNotificationsAsync);
         group.MapGet("/unread-count", GetUnreadCountAsync);
+        group.MapPost("", PublishNotificationAsync);
         group.MapPost("/", PublishNotificationAsync);
         group.MapPatch("/{id}/read", MarkReadAsync);
         group.MapPatch("/read-all", MarkAllReadAsync);

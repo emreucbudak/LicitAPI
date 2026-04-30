@@ -1,4 +1,4 @@
-namespace Licit.Gateway.API.Notifications;
+namespace Licit.NotificationService.API.Notifications;
 
 public interface INotificationService
 {
