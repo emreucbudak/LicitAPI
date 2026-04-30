@@ -29,6 +29,7 @@ public class GetTenderByIdQueryHandler(
             tender.CreatedByUserId,
             tender.CategoryId,
             tender.Category.Name,
+            tender.ImageUrl,
             tender.CreatedAt,
             tender.UpdatedAt,
             tender.Rules.Select(r => new TenderRuleDto(r.Id, r.Title, r.Description, r.IsRequired)).ToList()

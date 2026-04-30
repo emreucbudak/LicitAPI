@@ -34,6 +34,7 @@ public class GetAllTendersQueryHandler(
             t.CreatedByUserId,
             t.CategoryId,
             t.Category.Name,
+            t.ImageUrl,
             t.CreatedAt,
             t.Rules.Count
         )).ToList();

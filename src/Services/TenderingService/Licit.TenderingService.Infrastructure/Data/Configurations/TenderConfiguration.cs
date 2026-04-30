@@ -25,6 +25,12 @@ public class TenderConfiguration : IEntityTypeConfiguration<Tender>
             .HasConversion<string>()
             .HasMaxLength(50);
 
+        builder.Property(t => t.ImageUrl)
+            .HasMaxLength(2048);
+
+        builder.Property(t => t.ImageBlobName)
+            .HasMaxLength(512);
+
         builder.HasMany(t => t.Rules)
             .WithOne(r => r.Tender)
             .HasForeignKey(r => r.TenderId)

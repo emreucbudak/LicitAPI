@@ -4,9 +4,9 @@ using FlashMediator;
 using FluentValidation;
 using Grpc.Core;
 using Licit.WalletService.Application.Exceptions;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Deduct;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Freeze;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Unfreeze;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deduct;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Freeze;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Unfreeze;
 using Licit.WalletService.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 

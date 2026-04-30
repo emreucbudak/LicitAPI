@@ -37,7 +37,7 @@ public class ChangeTenderStatusCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
-        await eventPublisher.PublishTenderStatusChangedAsync(tender.Id, tender.Title, tender.Status.ToString(), cancellationToken);
+        await eventPublisher.PublishTenderStatusChangedAsync(tender.Id, tender.Title, tender.Status.ToString(), tender.ImageUrl, cancellationToken);
 
         return new ChangeTenderStatusCommandResponse(tender.Id, tender.Status.ToString(), tender.UpdatedAt);
     }

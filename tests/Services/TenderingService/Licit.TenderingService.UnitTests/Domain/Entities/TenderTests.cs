@@ -166,6 +166,32 @@ public class TenderTests
 
     #endregion
 
+    #region SetImage
+
+    [Fact]
+    public void SetImage_WhenDraft_ShouldStoreImageMetadata()
+    {
+        var tender = TenderTestFactory.CreateDraftTender();
+
+        tender.SetImage("https://cdn.test/tenders/image.webp", "tenders/test/image.webp");
+
+        tender.ImageUrl.Should().Be("https://cdn.test/tenders/image.webp");
+        tender.ImageBlobName.Should().Be("tenders/test/image.webp");
+        tender.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void SetImage_WhenActive_ShouldThrow()
+    {
+        var tender = TenderTestFactory.CreateActiveTender();
+
+        var act = () => tender.SetImage("https://cdn.test/tenders/image.webp", "tenders/test/image.webp");
+
+        act.Should().Throw<TenderNotEditableException>();
+    }
+
+    #endregion
+
     #region ChangeStatus - Valid Transitions
 
     [Theory]

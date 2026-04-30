@@ -11,6 +11,7 @@ public record GetTenderByIdQueryResponse(
     Guid CreatedByUserId,
     Guid CategoryId,
     string CategoryName,
+    string? ImageUrl,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     List<TenderRuleDto> Rules

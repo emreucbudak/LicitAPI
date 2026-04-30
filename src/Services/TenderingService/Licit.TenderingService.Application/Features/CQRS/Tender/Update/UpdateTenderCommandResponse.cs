@@ -9,5 +9,6 @@ public record UpdateTenderCommandResponse(
     DateTime EndDate,
     string Status,
     Guid CategoryId,
+    string? ImageUrl,
     DateTime? UpdatedAt
 );

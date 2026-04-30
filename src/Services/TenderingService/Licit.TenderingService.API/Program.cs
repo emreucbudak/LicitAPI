@@ -48,6 +48,10 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Cache Invalidator
 builder.Services.AddScoped<ITenderCacheInvalidator, TenderCacheInvalidator>();
 
+// Tender image storage
+builder.Services.Configure<TenderImageStorageOptions>(builder.Configuration.GetSection("TenderImages"));
+builder.Services.AddScoped<ITenderImageStorageService, AzureBlobTenderImageStorageService>();
+
 // RabbitMQ Event Publisher
 builder.Services.AddSingleton(sp =>
     RabbitMqEventPublisher.CreateAsync(
@@ -134,6 +138,10 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TenderingDbContext>();
     dbContext.Database.EnsureCreated();
+    dbContext.Database.ExecuteSqlRaw("""
+        ALTER TABLE "Tenders" ADD COLUMN IF NOT EXISTS "ImageUrl" character varying(2048);
+        ALTER TABLE "Tenders" ADD COLUMN IF NOT EXISTS "ImageBlobName" character varying(512);
+        """);
 }
 
 app.UseExceptionHandler();

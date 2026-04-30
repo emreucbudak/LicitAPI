@@ -4,7 +4,7 @@ using FluentValidation;
 using Licit.WalletService.API.Grpc;
 using Licit.WalletService.API.Middleware;
 using Licit.WalletService.Application.Behaviors;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Infrastructure.Data;
 using Licit.WalletService.Infrastructure.Services;
