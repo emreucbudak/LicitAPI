@@ -38,7 +38,7 @@ public class RabbitMqEventPublisher : IEventPublisher, IAsyncDisposable
         return new RabbitMqEventPublisher(logger, connection, channel);
     }
 
-    public async Task PublishTenderStatusChangedAsync(Guid tenderId, string title, string newStatus, CancellationToken cancellationToken = default)
+    public async Task PublishTenderStatusChangedAsync(Guid tenderId, string title, string newStatus, string? imageUrl = null, CancellationToken cancellationToken = default)
     {
         var message = new
         {
@@ -46,6 +46,7 @@ public class RabbitMqEventPublisher : IEventPublisher, IAsyncDisposable
             TenderId = tenderId,
             Title = title,
             NewStatus = newStatus,
+            ImageUrl = imageUrl,
             OccurredAt = DateTime.UtcNow
         };
 

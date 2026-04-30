@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
-using Licit.WalletService.Application.Features.CQRS.Wallet.GetTransactions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions;
+using Licit.WalletService.Application.Validators.Wallet.Queries.GetTransactions;
 
 namespace Licit.WalletService.UnitTests.Application.Validators;
 

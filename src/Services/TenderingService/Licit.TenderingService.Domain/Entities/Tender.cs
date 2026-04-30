@@ -13,6 +13,8 @@ public class Tender : BaseEntity
     public TenderStatus Status { get; private set; } = TenderStatus.Draft;
     public Guid CreatedByUserId { get; private set; }
     public Guid CategoryId { get; private set; }
+    public string? ImageUrl { get; private set; }
+    public string? ImageBlobName { get; private set; }
 
     public Category Category { get; private set; } = null!;
     public ICollection<TenderRule> Rules { get; private set; } = new List<TenderRule>();
@@ -44,6 +46,16 @@ public class Tender : BaseEntity
         StartDate = startDate;
         EndDate = endDate;
         CategoryId = categoryId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetImage(string imageUrl, string imageBlobName)
+    {
+        if (Status != TenderStatus.Draft)
+            throw new TenderNotEditableException();
+
+        ImageUrl = imageUrl;
+        ImageBlobName = imageBlobName;
         UpdatedAt = DateTime.UtcNow;
     }
 

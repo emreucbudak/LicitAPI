@@ -1,8 +1,8 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Deposit.Exceptions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit.Exceptions;
 using Licit.WalletService.Application.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;

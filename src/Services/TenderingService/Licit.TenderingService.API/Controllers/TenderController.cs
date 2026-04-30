@@ -6,6 +6,7 @@ using Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Update;
+using Licit.TenderingService.Application.Features.CQRS.Tender.UploadImage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -74,6 +75,29 @@ public class TenderController(IMediator mediator) : ControllerBase
         );
 
         var result = await mediator.Send(command);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/image")]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> UploadImage(Guid id, IFormFile file)
+    {
+        if (file is null)
+            return BadRequest(new { message = "Gorsel dosyasi belirtilmelidir." });
+
+        var userId = GetCurrentUserId();
+        await using var stream = file.OpenReadStream();
+
+        var result = await mediator.Send(new UploadTenderImageCommandRequest(
+            id,
+            userId,
+            stream,
+            file.FileName,
+            file.ContentType,
+            file.Length
+        ));
+
         return Ok(result);
     }
 

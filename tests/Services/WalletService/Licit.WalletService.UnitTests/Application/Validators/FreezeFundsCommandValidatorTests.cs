@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Freeze;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Freeze;
+using Licit.WalletService.Application.Validators.Wallet.Commands.Freeze;
 
 namespace Licit.WalletService.UnitTests.Application.Validators;
 

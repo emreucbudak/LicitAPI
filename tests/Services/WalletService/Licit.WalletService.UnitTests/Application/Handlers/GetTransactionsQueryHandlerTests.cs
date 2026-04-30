@@ -1,8 +1,8 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.WalletService.Application.Features.CQRS.Wallet.GetTransactions;
-using Licit.WalletService.Application.Features.CQRS.Wallet.GetTransactions.Exceptions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;
 using Licit.WalletService.UnitTests.Common;

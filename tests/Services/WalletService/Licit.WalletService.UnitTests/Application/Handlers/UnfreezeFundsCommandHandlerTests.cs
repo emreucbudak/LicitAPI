@@ -1,8 +1,8 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Unfreeze;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Withdraw.Exceptions;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Unfreeze;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Withdraw.Exceptions;
 using Licit.WalletService.Domain.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;

@@ -9,5 +9,6 @@ public record CreateTenderCommandResponse(
     DateTime EndDate,
     string Status,
     Guid CategoryId,
+    string? ImageUrl,
     DateTime CreatedAt
 );

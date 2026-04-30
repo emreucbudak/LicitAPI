@@ -27,7 +27,7 @@ public class CustomExceptionHandler(ILogger<CustomExceptionHandler> logger) : IE
         {
             logger.LogError(
                 exception,
-                "Application/domain exception handled. TraceId: {TraceId} Path: {Path} StatusCode: {StatusCode} ErrorType: {ErrorType} Message: {Message}",
+                "Uygulama/domain hatası işlendi. TraceId: {TraceId} Path: {Path} StatusCode: {StatusCode} ErrorType: {ErrorType} Message: {Message}",
                 traceId,
                 path,
                 statusCode,
@@ -38,7 +38,7 @@ public class CustomExceptionHandler(ILogger<CustomExceptionHandler> logger) : IE
         {
             logger.LogWarning(
                 exception,
-                "Application/domain exception handled. TraceId: {TraceId} Path: {Path} StatusCode: {StatusCode} ErrorType: {ErrorType} Message: {Message}",
+                "Uygulama/domain hatası işlendi. TraceId: {TraceId} Path: {Path} StatusCode: {StatusCode} ErrorType: {ErrorType} Message: {Message}",
                 traceId,
                 path,
                 statusCode,

@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Deduct;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deduct;
+using Licit.WalletService.Application.Validators.Wallet.Commands.Deduct;
 
 namespace Licit.WalletService.UnitTests.Application.Validators;
 
