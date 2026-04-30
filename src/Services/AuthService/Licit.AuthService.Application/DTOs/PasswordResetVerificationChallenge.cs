@@ -1,6 +1,6 @@
 namespace Licit.AuthService.Application.DTOs;
 
-public sealed class PasswordResetVerificationChallenge
+public sealed record PasswordResetVerificationChallenge
 {
     public Guid? UserId { get; set; }
     public string Email { get; set; } = string.Empty;

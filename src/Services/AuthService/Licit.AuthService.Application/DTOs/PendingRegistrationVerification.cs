@@ -1,6 +1,6 @@
 namespace Licit.AuthService.Application.DTOs;
 
-public sealed class PendingRegistrationVerification
+public sealed record PendingRegistrationVerification
 {
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;

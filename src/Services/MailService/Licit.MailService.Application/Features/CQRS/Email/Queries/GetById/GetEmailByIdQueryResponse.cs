@@ -1,4 +1,4 @@
-namespace Licit.MailService.Application.Features.CQRS.Email.GetById;
+namespace Licit.MailService.Application.Features.CQRS.Email.Queries.GetById;
 
 public record GetEmailByIdQueryResponse(
     Guid Id,

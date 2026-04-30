@@ -1,6 +1,6 @@
 using Licit.MailService.Application.Exceptions;
 
-namespace Licit.MailService.Application.Features.CQRS.Email.Send.Exceptions;
+namespace Licit.MailService.Application.Features.CQRS.Email.Commands.Send.Exceptions;
 
 public class EmailSendFailedException : BusinessRuleException
 {

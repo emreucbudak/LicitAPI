@@ -1,7 +1,7 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.MailService.Application.Features.CQRS.Email.GetAll;
+using Licit.MailService.Application.Features.CQRS.Email.Queries.GetAll;
 using Licit.MailService.Application.Interfaces;
 using Licit.MailService.Domain.Entities;
 using NSubstitute;

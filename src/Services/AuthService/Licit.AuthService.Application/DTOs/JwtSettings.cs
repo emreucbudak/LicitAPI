@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Licit.AuthService.Application.DTOs;
 
-public class JwtSettings
+public record JwtSettings
 {
     [Required, MinLength(32)]
     public string Secret { get; set; } = null!;

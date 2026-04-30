@@ -1,8 +1,8 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.MailService.Application.Features.CQRS.Email.Send;
-using Licit.MailService.Application.Features.CQRS.Email.Send.Exceptions;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send.Exceptions;
 using Licit.MailService.Application.Interfaces;
 using Licit.MailService.Domain.Entities;
 using NSubstitute;

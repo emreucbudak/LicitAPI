@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 
-namespace Licit.AuthService.API.Middleware;
+namespace Licit.AuthService.API.ExceptionHandlers;
 
 public class ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logger) : IExceptionHandler
 {

@@ -1,7 +1,7 @@
 using FlashMediator;
-using Licit.MailService.Application.Features.CQRS.Email.GetAll;
-using Licit.MailService.Application.Features.CQRS.Email.GetById;
-using Licit.MailService.Application.Features.CQRS.Email.Send;
+using Licit.MailService.Application.Features.CQRS.Email.Queries.GetAll;
+using Licit.MailService.Application.Features.CQRS.Email.Queries.GetById;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

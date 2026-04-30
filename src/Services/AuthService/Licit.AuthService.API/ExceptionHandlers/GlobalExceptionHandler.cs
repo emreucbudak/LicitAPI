@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 
-namespace Licit.AuthService.API.Middleware;
+namespace Licit.AuthService.API.ExceptionHandlers;
 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {

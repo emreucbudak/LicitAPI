@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using FlashMediator;
 using Licit.MailService.Application.DTOs;
-using Licit.MailService.Application.Features.CQRS.Email.Send;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 

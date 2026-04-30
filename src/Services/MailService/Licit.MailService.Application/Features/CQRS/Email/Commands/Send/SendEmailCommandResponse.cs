@@ -1,4 +1,4 @@
-namespace Licit.MailService.Application.Features.CQRS.Email.Send;
+namespace Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 
 public record SendEmailCommandResponse(
     Guid Id,

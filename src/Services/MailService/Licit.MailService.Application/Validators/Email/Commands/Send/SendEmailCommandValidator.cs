@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.MailService.Application.Features.CQRS.Email.Send;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 
 namespace Licit.MailService.Application.Validators.Email.Commands.Send;
 

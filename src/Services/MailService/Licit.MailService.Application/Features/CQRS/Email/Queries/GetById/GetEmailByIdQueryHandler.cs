@@ -1,9 +1,9 @@
 using FlashMediator;
 using FluentValidation;
-using Licit.MailService.Application.Features.CQRS.Email.GetById.Exceptions;
+using Licit.MailService.Application.Features.CQRS.Email.Queries.GetById.Exceptions;
 using Licit.MailService.Application.Interfaces;
 
-namespace Licit.MailService.Application.Features.CQRS.Email.GetById;
+namespace Licit.MailService.Application.Features.CQRS.Email.Queries.GetById;
 
 public class GetEmailByIdQueryHandler(
     IEmailRepository emailRepository,

@@ -1,10 +1,10 @@
 using FlashMediator;
 using FluentValidation;
-using Licit.MailService.Application.Features.CQRS.Email.Send.Exceptions;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send.Exceptions;
 using Licit.MailService.Application.Interfaces;
 using Licit.MailService.Domain.Entities;
 
-namespace Licit.MailService.Application.Features.CQRS.Email.Send;
+namespace Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 
 public class SendEmailCommandHandler(
     IUnitOfWork unitOfWork,

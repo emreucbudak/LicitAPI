@@ -1,7 +1,7 @@
 using System.Text;
 using FlashMediator;
 using FluentValidation;
-using Licit.AuthService.API.Middleware;
+using Licit.AuthService.API.ExceptionHandlers;
 using Licit.AuthService.Application.Behaviors;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;

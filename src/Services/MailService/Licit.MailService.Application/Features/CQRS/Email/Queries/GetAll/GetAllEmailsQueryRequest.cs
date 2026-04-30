@@ -1,6 +1,6 @@
 using FlashMediator;
 
-namespace Licit.MailService.Application.Features.CQRS.Email.GetAll;
+namespace Licit.MailService.Application.Features.CQRS.Email.Queries.GetAll;
 
 public record GetAllEmailsQueryRequest(
     int Page,

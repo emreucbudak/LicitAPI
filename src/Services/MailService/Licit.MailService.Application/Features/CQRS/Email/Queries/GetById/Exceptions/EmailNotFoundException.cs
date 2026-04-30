@@ -1,6 +1,6 @@
 using Licit.MailService.Application.Exceptions;
 
-namespace Licit.MailService.Application.Features.CQRS.Email.GetById.Exceptions;
+namespace Licit.MailService.Application.Features.CQRS.Email.Queries.GetById.Exceptions;
 
 public class EmailNotFoundException : NotFoundException
 {

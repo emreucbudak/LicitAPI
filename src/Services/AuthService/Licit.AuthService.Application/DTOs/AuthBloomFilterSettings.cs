@@ -1,6 +1,6 @@
 namespace Licit.AuthService.Application.DTOs;
 
-public class AuthBloomFilterSettings
+public record AuthBloomFilterSettings
 {
     public string RegisteredEmailsKey { get; set; } = "auth:bloom:registered-emails";
     public string PasswordsKeyPrefix { get; set; } = "auth:bloom:passwords";

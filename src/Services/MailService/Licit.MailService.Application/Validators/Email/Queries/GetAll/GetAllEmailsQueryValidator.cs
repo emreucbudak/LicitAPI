@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.MailService.Application.Features.CQRS.Email.GetAll;
+using Licit.MailService.Application.Features.CQRS.Email.Queries.GetAll;
 
 namespace Licit.MailService.Application.Validators.Email.Queries.GetAll;
 

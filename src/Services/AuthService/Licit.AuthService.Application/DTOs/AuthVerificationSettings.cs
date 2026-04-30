@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Licit.AuthService.Application.DTOs;
 
-public class AuthVerificationSettings
+public record AuthVerificationSettings
 {
     [Range(1, 60)]
     public int RegisterVerificationCodeExpirationMinutes { get; set; } = 10;

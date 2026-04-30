@@ -6,7 +6,7 @@ using Licit.MailService.API.BackgroundServices;
 using Licit.MailService.API.ExceptionHandlers;
 using Licit.MailService.Application.Behaviors;
 using Licit.MailService.Application.DTOs;
-using Licit.MailService.Application.Features.CQRS.Email.Send;
+using Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 using Licit.MailService.Application.Interfaces;
 using Licit.MailService.Infrastructure.Data;
 using Licit.MailService.Infrastructure.Repositories;

@@ -1,6 +1,6 @@
 using FlashMediator;
 
-namespace Licit.MailService.Application.Features.CQRS.Email.Send;
+namespace Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
 
 public record SendEmailCommandRequest(
     string To,
