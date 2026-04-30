@@ -20,10 +20,9 @@ public class WithdrawFundsCommandHandlerTests
 
     public WithdrawFundsCommandHandlerTests()
     {
-        _unitOfWork.Wallets.Returns(_walletRepo);
         _validator.ValidateAsync(Arg.Any<WithdrawFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new WithdrawFundsCommandHandler(_unitOfWork, _validator);
+        _handler = new WithdrawFundsCommandHandler(_unitOfWork, _walletRepo, _validator);
     }
 
     [Fact]

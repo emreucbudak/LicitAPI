@@ -20,12 +20,11 @@ public class UnfreezeFundsCommandHandlerTests
 
     public UnfreezeFundsCommandHandlerTests()
     {
-        _unitOfWork.Wallets.Returns(_walletRepo);
         _walletRepo.GetTransactionByWalletTypeAndReferenceAsync(Arg.Any<Guid>(), Arg.Any<TransactionType>(), Arg.Any<Guid>())
             .Returns(Task.FromResult<WalletTransaction?>(null));
         _validator.ValidateAsync(Arg.Any<UnfreezeFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new UnfreezeFundsCommandHandler(_unitOfWork, _validator);
+        _handler = new UnfreezeFundsCommandHandler(_unitOfWork, _walletRepo, _validator);
     }
 
     [Fact]

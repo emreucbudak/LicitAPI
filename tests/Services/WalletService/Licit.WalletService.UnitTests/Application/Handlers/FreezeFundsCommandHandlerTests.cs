@@ -20,12 +20,11 @@ public class FreezeFundsCommandHandlerTests
 
     public FreezeFundsCommandHandlerTests()
     {
-        _unitOfWork.Wallets.Returns(_walletRepo);
         _walletRepo.GetTransactionByWalletTypeAndReferenceAsync(Arg.Any<Guid>(), Arg.Any<TransactionType>(), Arg.Any<Guid>())
             .Returns(Task.FromResult<WalletTransaction?>(null));
         _validator.ValidateAsync(Arg.Any<FreezeFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new FreezeFundsCommandHandler(_unitOfWork, _validator);
+        _handler = new FreezeFundsCommandHandler(_unitOfWork, _walletRepo, _validator);
     }
 
     [Fact]
