@@ -7,6 +7,7 @@ using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Infrastructure.Data;
+using Licit.WalletService.Infrastructure.Repositories;
 using Licit.WalletService.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -59,6 +60,7 @@ builder.Services.AddDbContext<WalletDbContext>(options =>
 
 // Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IDepositIdempotencyStore, RedisDepositIdempotencyStore>();
 
 // Redis

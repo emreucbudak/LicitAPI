@@ -9,6 +9,7 @@ namespace Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
 
 public class DepositFundsCommandHandler(
     IUnitOfWork unitOfWork,
+    IWalletRepository walletRepository,
     IDepositIdempotencyStore idempotencyStore,
     IValidator<DepositFundsCommandRequest> validator) : IRequestHandler<DepositFundsCommandRequest, DepositFundsCommandResponse>
 {
@@ -31,12 +32,12 @@ public class DepositFundsCommandHandler(
 
         try
         {
-            var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId);
+            var wallet = await walletRepository.GetByUserIdAsync(request.UserId);
 
             if (wallet is null)
             {
                 wallet = new Domain.Entities.Wallet(request.UserId);
-                unitOfWork.Wallets.Add(wallet);
+                walletRepository.Add(wallet);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
             }
 

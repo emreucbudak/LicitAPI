@@ -11,6 +11,7 @@ namespace Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Freeze;
 
 public class FreezeFundsCommandHandler(
     IUnitOfWork unitOfWork,
+    IWalletRepository walletRepository,
     IValidator<FreezeFundsCommandRequest> validator) : IRequestHandler<FreezeFundsCommandRequest, FreezeFundsCommandResponse>
 {
     public async Task<FreezeFundsCommandResponse> Handle(FreezeFundsCommandRequest request, CancellationToken cancellationToken)
@@ -19,10 +20,10 @@ public class FreezeFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await unitOfWork.Wallets.GetByUserIdAsync(request.UserId)
+        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
-        var existingTransaction = await unitOfWork.Wallets.GetTransactionByWalletTypeAndReferenceAsync(
+        var existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
             wallet.Id,
             TransactionType.Freeze,
             request.ReferenceId);
@@ -44,7 +45,7 @@ public class FreezeFundsCommandHandler(
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }
         catch (DbUpdateException)
         {
-            existingTransaction = await unitOfWork.Wallets.GetTransactionByWalletTypeAndReferenceAsync(
+            existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
                 wallet.Id,
                 TransactionType.Freeze,
                 request.ReferenceId);

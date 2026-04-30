@@ -22,7 +22,6 @@ public class DepositFundsCommandHandlerTests
 
     public DepositFundsCommandHandlerTests()
     {
-        _unitOfWork.Wallets.Returns(_walletRepo);
         _validator.ValidateAsync(Arg.Any<DepositFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
         _idempotencyStore.TryReserveAsync(
@@ -31,7 +30,7 @@ public class DepositFundsCommandHandlerTests
                 Arg.Any<TimeSpan>(),
                 Arg.Any<CancellationToken>())
             .Returns(true);
-        _handler = new DepositFundsCommandHandler(_unitOfWork, _idempotencyStore, _validator);
+        _handler = new DepositFundsCommandHandler(_unitOfWork, _walletRepo, _idempotencyStore, _validator);
     }
 
     [Fact]

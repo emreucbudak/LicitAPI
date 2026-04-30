@@ -12,17 +12,15 @@ namespace Licit.WalletService.UnitTests.Application.Handlers;
 
 public class GetTransactionsQueryHandlerTests
 {
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IWalletRepository _walletRepo = Substitute.For<IWalletRepository>();
     private readonly IValidator<GetTransactionsQueryRequest> _validator = Substitute.For<IValidator<GetTransactionsQueryRequest>>();
     private readonly GetTransactionsQueryHandler _handler;
 
     public GetTransactionsQueryHandlerTests()
     {
-        _unitOfWork.Wallets.Returns(_walletRepo);
         _validator.ValidateAsync(Arg.Any<GetTransactionsQueryRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new GetTransactionsQueryHandler(_unitOfWork, _validator);
+        _handler = new GetTransactionsQueryHandler(_walletRepo, _validator);
     }
 
     [Fact]
