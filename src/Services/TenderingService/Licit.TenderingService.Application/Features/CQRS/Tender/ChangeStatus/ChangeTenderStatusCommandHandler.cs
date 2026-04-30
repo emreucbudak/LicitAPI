@@ -10,6 +10,7 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus;
 
 public class ChangeTenderStatusCommandHandler(
     IUnitOfWork unitOfWork,
+    ITenderRepository tenderRepository,
     IValidator<ChangeTenderStatusCommandRequest> validator,
     ITenderCacheInvalidator cacheInvalidator,
     IEventPublisher eventPublisher) : IRequestHandler<ChangeTenderStatusCommandRequest, ChangeTenderStatusCommandResponse>
@@ -20,7 +21,7 @@ public class ChangeTenderStatusCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
+        var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         if (!Enum.TryParse<TenderStatus>(request.NewStatus, true, out var newStatus))

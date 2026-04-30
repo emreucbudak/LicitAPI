@@ -12,17 +12,15 @@ namespace Licit.TenderingService.UnitTests.Application.Handlers;
 
 public class GetTenderByIdQueryHandlerTests
 {
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
     private readonly IValidator<GetTenderByIdQueryRequest> _validator = Substitute.For<IValidator<GetTenderByIdQueryRequest>>();
     private readonly GetTenderByIdQueryHandler _handler;
 
     public GetTenderByIdQueryHandlerTests()
     {
-        _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<GetTenderByIdQueryRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new GetTenderByIdQueryHandler(_unitOfWork, _validator);
+        _handler = new GetTenderByIdQueryHandler(_tenderRepo, _validator);
     }
 
     [Fact]

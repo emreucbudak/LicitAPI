@@ -22,10 +22,9 @@ public class ChangeTenderStatusCommandHandlerTests
 
     public ChangeTenderStatusCommandHandlerTests()
     {
-        _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<ChangeTenderStatusCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new ChangeTenderStatusCommandHandler(_unitOfWork, _validator, _cacheInvalidator, _eventPublisher);
+        _handler = new ChangeTenderStatusCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator, _eventPublisher);
     }
 
     [Fact]

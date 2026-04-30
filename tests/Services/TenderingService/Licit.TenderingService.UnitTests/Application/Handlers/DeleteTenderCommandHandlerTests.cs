@@ -21,10 +21,9 @@ public class DeleteTenderCommandHandlerTests
 
     public DeleteTenderCommandHandlerTests()
     {
-        _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<DeleteTenderCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new DeleteTenderCommandHandler(_unitOfWork, _validator, _cacheInvalidator);
+        _handler = new DeleteTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator);
     }
 
     [Fact]

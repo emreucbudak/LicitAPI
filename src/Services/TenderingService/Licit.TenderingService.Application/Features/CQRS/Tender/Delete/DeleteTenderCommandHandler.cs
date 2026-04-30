@@ -8,6 +8,7 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.Delete;
 
 public class DeleteTenderCommandHandler(
     IUnitOfWork unitOfWork,
+    ITenderRepository tenderRepository,
     IValidator<DeleteTenderCommandRequest> validator,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<DeleteTenderCommandRequest>
 {
@@ -17,7 +18,7 @@ public class DeleteTenderCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
+        var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         if (tender.CreatedByUserId != request.UserId)
@@ -25,7 +26,7 @@ public class DeleteTenderCommandHandler(
 
         tender.ValidateForDeletion();
 
-        unitOfWork.Tenders.Remove(tender);
+        tenderRepository.Remove(tender);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
     }

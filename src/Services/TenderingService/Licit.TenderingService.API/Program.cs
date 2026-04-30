@@ -6,6 +6,7 @@ using Licit.TenderingService.Application.Behaviors;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Infrastructure.Data;
+using Licit.TenderingService.Infrastructure.Repositories;
 using Licit.TenderingService.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,8 @@ builder.Services.AddDbContext<TenderingDbContext>(options =>
 
 // Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ITenderRepository, TenderRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 // Cache Invalidator
 builder.Services.AddScoped<ITenderCacheInvalidator, TenderCacheInvalidator>();

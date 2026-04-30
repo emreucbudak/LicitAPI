@@ -6,6 +6,7 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.Create;
 
 public class CreateTenderCommandHandler(
     IUnitOfWork unitOfWork,
+    ITenderRepository tenderRepository,
     IValidator<CreateTenderCommandRequest> validator,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
 {
@@ -31,7 +32,7 @@ public class CreateTenderCommandHandler(
                 tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
         }
 
-        unitOfWork.Tenders.Add(tender);
+        tenderRepository.Add(tender);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
 

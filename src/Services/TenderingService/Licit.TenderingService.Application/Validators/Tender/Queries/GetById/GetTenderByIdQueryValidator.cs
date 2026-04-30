@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
 
-namespace Licit.TenderingService.Application.Features.CQRS.Tender.GetById;
+namespace Licit.TenderingService.Application.Validators.Tender.Queries.GetById;
 
 public class GetTenderByIdQueryValidator : AbstractValidator<GetTenderByIdQueryRequest>
 {

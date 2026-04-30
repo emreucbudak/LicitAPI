@@ -1,6 +1,7 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Create;
+using Licit.TenderingService.Application.Validators.Tender.Commands.Create;
 
 namespace Licit.TenderingService.UnitTests.Application.Validators;
 

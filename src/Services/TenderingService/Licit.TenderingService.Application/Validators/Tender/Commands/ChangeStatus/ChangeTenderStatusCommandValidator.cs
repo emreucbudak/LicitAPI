@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus;
 
-namespace Licit.TenderingService.Application.Features.CQRS.Tender.ChangeStatus;
+namespace Licit.TenderingService.Application.Validators.Tender.Commands.ChangeStatus;
 
 public class ChangeTenderStatusCommandValidator : AbstractValidator<ChangeTenderStatusCommandRequest>
 {

@@ -10,6 +10,7 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.UploadImage;
 
 public class UploadTenderImageCommandHandler(
     IUnitOfWork unitOfWork,
+    ITenderRepository tenderRepository,
     IValidator<UploadTenderImageCommandRequest> validator,
     ITenderImageStorageService imageStorage,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<UploadTenderImageCommandRequest, UploadTenderImageCommandResponse>
@@ -20,7 +21,7 @@ public class UploadTenderImageCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var tender = await unitOfWork.Tenders.GetByIdAsync(request.Id)
+        var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
         if (tender.CreatedByUserId != request.UserId)

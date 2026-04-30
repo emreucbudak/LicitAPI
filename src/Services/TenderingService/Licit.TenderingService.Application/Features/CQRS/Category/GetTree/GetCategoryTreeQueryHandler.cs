@@ -6,11 +6,11 @@ using CategoryEntity = Licit.TenderingService.Domain.Entities.Category;
 namespace Licit.TenderingService.Application.Features.CQRS.Category.GetTree;
 
 public class GetCategoryTreeQueryHandler(
-    IUnitOfWork unitOfWork) : IRequestHandler<GetCategoryTreeQueryRequest, GetCategoryTreeQueryResponse>
+    ICategoryRepository categoryRepository) : IRequestHandler<GetCategoryTreeQueryRequest, GetCategoryTreeQueryResponse>
 {
     public async Task<GetCategoryTreeQueryResponse> Handle(GetCategoryTreeQueryRequest request, CancellationToken cancellationToken)
     {
-        var categories = await unitOfWork.Categories.GetAllAsync(cancellationToken);
+        var categories = await categoryRepository.GetAllAsync(cancellationToken);
         var childrenByParentId = categories
             .Where(c => c.ParentCategoryId is not null)
             .GroupBy(c => c.ParentCategoryId!.Value)

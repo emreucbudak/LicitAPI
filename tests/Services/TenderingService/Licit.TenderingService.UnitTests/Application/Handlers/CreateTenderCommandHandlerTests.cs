@@ -18,10 +18,9 @@ public class CreateTenderCommandHandlerTests
 
     public CreateTenderCommandHandlerTests()
     {
-        _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<CreateTenderCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new CreateTenderCommandHandler(_unitOfWork, _validator, _cacheInvalidator);
+        _handler = new CreateTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator);
     }
 
     private CreateTenderCommandRequest CreateValidRequest() => new(

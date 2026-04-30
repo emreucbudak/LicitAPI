@@ -22,10 +22,9 @@ public class UpdateTenderCommandHandlerTests
 
     public UpdateTenderCommandHandlerTests()
     {
-        _unitOfWork.Tenders.Returns(_tenderRepo);
         _validator.ValidateAsync(Arg.Any<UpdateTenderCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new UpdateTenderCommandHandler(_unitOfWork, _validator, _cacheInvalidator);
+        _handler = new UpdateTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator);
     }
 
     private UpdateTenderCommandRequest CreateValidRequest(Guid? id = null, Guid? userId = null) => new(

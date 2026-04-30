@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.TenderingService.Application.Features.CQRS.Tender.UploadImage;
 
-namespace Licit.TenderingService.Application.Features.CQRS.Tender.UploadImage;
+namespace Licit.TenderingService.Application.Validators.Tender.Commands.UploadImage;
 
 public class UploadTenderImageCommandValidator : AbstractValidator<UploadTenderImageCommandRequest>
 {

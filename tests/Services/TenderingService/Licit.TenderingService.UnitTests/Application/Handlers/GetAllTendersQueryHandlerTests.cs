@@ -2,6 +2,7 @@ using FluentAssertions;
 using FluentValidation;
 using Licit.TenderingService.Application.Features.CQRS.Tender.GetAll;
 using Licit.TenderingService.Application.Interfaces;
+using Licit.TenderingService.Application.Validators.Tender.Queries.GetAll;
 using Licit.TenderingService.Domain.Entities;
 using Licit.TenderingService.UnitTests.Common;
 using NSubstitute;
@@ -10,15 +11,13 @@ namespace Licit.TenderingService.UnitTests.Application.Handlers;
 
 public class GetAllTendersQueryHandlerTests
 {
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
     private readonly IValidator<GetAllTendersQueryRequest> _validator = new GetAllTendersQueryValidator();
     private readonly GetAllTendersQueryHandler _handler;
 
     public GetAllTendersQueryHandlerTests()
     {
-        _unitOfWork.Tenders.Returns(_tenderRepo);
-        _handler = new GetAllTendersQueryHandler(_unitOfWork, _validator);
+        _handler = new GetAllTendersQueryHandler(_tenderRepo, _validator);
     }
 
     [Fact]
