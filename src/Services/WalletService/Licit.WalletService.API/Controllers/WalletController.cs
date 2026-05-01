@@ -1,5 +1,11 @@
 using FlashMediator;
-using Licit.WalletService.Application.Features.CQRS.Wallet.CurrentUser;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deduct;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Freeze;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Unfreeze;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Withdraw;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetBalance;
+using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

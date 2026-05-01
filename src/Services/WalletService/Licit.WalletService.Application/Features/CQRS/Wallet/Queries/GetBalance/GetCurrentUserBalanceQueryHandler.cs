@@ -1,8 +1,7 @@
 using FlashMediator;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetBalance;
 using Licit.WalletService.Application.Interfaces;
 
-namespace Licit.WalletService.Application.Features.CQRS.Wallet.CurrentUser;
+namespace Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetBalance;
 
 public class GetCurrentUserBalanceQueryHandler(
     IMediator mediator,

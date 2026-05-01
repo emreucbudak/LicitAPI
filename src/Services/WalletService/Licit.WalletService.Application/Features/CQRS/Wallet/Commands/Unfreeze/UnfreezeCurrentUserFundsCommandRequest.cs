@@ -1,7 +1,6 @@
 using FlashMediator;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Unfreeze;
 
-namespace Licit.WalletService.Application.Features.CQRS.Wallet.CurrentUser;
+namespace Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Unfreeze;
 
 public record UnfreezeCurrentUserFundsCommandRequest(
     decimal Amount,

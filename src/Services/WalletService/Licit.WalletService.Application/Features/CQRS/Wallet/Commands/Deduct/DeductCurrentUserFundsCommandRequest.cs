@@ -1,7 +1,6 @@
 using FlashMediator;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deduct;
 
-namespace Licit.WalletService.Application.Features.CQRS.Wallet.CurrentUser;
+namespace Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deduct;
 
 public record DeductCurrentUserFundsCommandRequest(
     decimal Amount,
