@@ -13,9 +13,9 @@ namespace Licit.MailService.API.Controllers;
 public class EmailController(IMediator mediator) : ControllerBase
 {
     [HttpPost("send")]
-    public async Task<IActionResult> Send([FromBody] SendEmailRequest request)
+    public async Task<IActionResult> Send([FromBody] SendEmailCommandRequest request)
     {
-        var result = await mediator.Send(new SendEmailCommandRequest(request.To, request.Subject, request.Body));
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
@@ -33,5 +33,3 @@ public class EmailController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 }
-
-public record SendEmailRequest(string To, string Subject, string Body);

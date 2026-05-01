@@ -1,5 +1,6 @@
 using FlashMediator;
 using FluentValidation;
+using Licit.TenderingService.Application.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
@@ -8,6 +9,7 @@ public class CreateTenderCommandHandler(
     IUnitOfWork unitOfWork,
     ITenderRepository tenderRepository,
     IValidator<CreateTenderCommandRequest> validator,
+    ICurrentUserService currentUserService,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<CreateTenderCommandRequest, CreateTenderCommandResponse>
 {
     public async Task<CreateTenderCommandResponse> Handle(CreateTenderCommandRequest request, CancellationToken cancellationToken)
@@ -16,13 +18,16 @@ public class CreateTenderCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
+        var userId = currentUserService.UserId
+            ?? throw new UnauthorizedException("Kullanici kimligi bulunamadi.");
+
         var tender = new Domain.Entities.Tender(
             request.Title,
             request.Description,
             request.StartingPrice,
             request.StartDate,
             request.EndDate,
-            request.CreatedByUserId,
+            userId,
             request.CategoryId
         );
 

@@ -1,12 +1,11 @@
-using System.Security.Claims;
 using FlashMediator;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.ChangeStatus;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Delete;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetAll;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Update;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.UploadImage;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetAll;
+using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,44 +36,17 @@ public class TenderController(IMediator mediator) : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateTenderRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateTenderCommandRequest request)
     {
-        var userId = GetCurrentUserId();
-
-        var command = new CreateTenderCommandRequest(
-            request.Title,
-            request.Description,
-            request.StartingPrice,
-            request.StartDate,
-            request.EndDate,
-            userId,
-            request.CategoryId,
-            request.Rules
-        );
-
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(request);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
     [Authorize]
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTenderRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTenderCommandRequest request)
     {
-        var userId = GetCurrentUserId();
-
-        var command = new UpdateTenderCommandRequest(
-            id,
-            request.Title,
-            request.Description,
-            request.StartingPrice,
-            request.StartDate,
-            request.EndDate,
-            request.CategoryId,
-            request.Rules,
-            userId
-        );
-
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(request with { Id = id });
         return Ok(result);
     }
 
@@ -86,12 +58,10 @@ public class TenderController(IMediator mediator) : ControllerBase
         if (file is null)
             return BadRequest(new { message = "Gorsel dosyasi belirtilmelidir." });
 
-        var userId = GetCurrentUserId();
         await using var stream = file.OpenReadStream();
 
         var result = await mediator.Send(new UploadTenderImageCommandRequest(
             id,
-            userId,
             stream,
             file.FileName,
             file.ContentType,
@@ -103,9 +73,9 @@ public class TenderController(IMediator mediator) : ControllerBase
 
     [Authorize]
     [HttpPatch("{id:guid}/status")]
-    public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeStatusRequest request)
+    public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeTenderStatusCommandRequest request)
     {
-        var result = await mediator.Send(new ChangeTenderStatusCommandRequest(id, request.Status));
+        var result = await mediator.Send(request with { Id = id });
         return Ok(result);
     }
 
@@ -113,39 +83,7 @@ public class TenderController(IMediator mediator) : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = GetCurrentUserId();
-        await mediator.Send(new DeleteTenderCommandRequest(id, userId));
+        await mediator.Send(new DeleteTenderCommandRequest(id));
         return NoContent();
     }
-
-    private Guid GetCurrentUserId()
-    {
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                  ?? User.FindFirst("sub")?.Value
-                  ?? throw new UnauthorizedAccessException("Kullanıcı kimliği bulunamadı.");
-
-        return Guid.Parse(sub);
-    }
 }
-
-public record CreateTenderRequest(
-    string Title,
-    string Description,
-    decimal StartingPrice,
-    DateTime StartDate,
-    DateTime EndDate,
-    Guid CategoryId,
-    List<CreateTenderRuleDto>? Rules
-);
-
-public record UpdateTenderRequest(
-    string Title,
-    string Description,
-    decimal StartingPrice,
-    DateTime StartDate,
-    DateTime EndDate,
-    Guid CategoryId,
-    List<CreateTenderRuleDto>? Rules
-);
-
-public record ChangeStatusRequest(string Status);

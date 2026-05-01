@@ -4,5 +4,5 @@ namespace Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Chang
 
 public record ChangeTenderStatusCommandRequest(
     Guid Id,
-    string NewStatus
+    string Status
 ) : IRequest<ChangeTenderStatusCommandResponse>;

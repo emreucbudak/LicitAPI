@@ -15,7 +15,6 @@ public class CreateTenderCommandValidatorTests
         StartingPrice: 1000m,
         StartDate: DateTime.UtcNow.AddDays(1),
         EndDate: DateTime.UtcNow.AddDays(30),
-        CreatedByUserId: Guid.NewGuid(),
         CategoryId: Guid.NewGuid(),
         Rules: null
     );
@@ -104,14 +103,6 @@ public class CreateTenderCommandValidatorTests
         var request = CreateValidRequest() with { StartDate = date, EndDate = date };
         var result = await _validator.TestValidateAsync(request);
         result.ShouldHaveValidationErrorFor(x => x.EndDate);
-    }
-
-    [Fact]
-    public async Task CreatedByUserId_WhenEmpty_ShouldHaveError()
-    {
-        var request = CreateValidRequest() with { CreatedByUserId = Guid.Empty };
-        var result = await _validator.TestValidateAsync(request);
-        result.ShouldHaveValidationErrorFor(x => x.CreatedByUserId);
     }
 
     [Fact]

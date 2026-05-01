@@ -25,9 +25,6 @@ public class CreateTenderCommandValidator : AbstractValidator<CreateTenderComman
             .NotEmpty().WithMessage("Bitiş tarihi belirtilmelidir.")
             .GreaterThan(x => x.StartDate).WithMessage("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
 
-        RuleFor(x => x.CreatedByUserId)
-            .NotEmpty().WithMessage("Oluşturan kullanıcı kimliği belirtilmelidir.");
-
         RuleFor(x => x.CategoryId)
             .NotEmpty().WithMessage("Kategori belirtilmelidir.");
     }

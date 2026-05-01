@@ -28,10 +28,10 @@ public class ChangeTenderStatusCommandValidatorTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task NewStatus_WhenEmpty_ShouldHaveError(string? status)
+    public async Task Status_WhenEmpty_ShouldHaveError(string? status)
     {
         var request = new ChangeTenderStatusCommandRequest(Guid.NewGuid(), status!);
         var result = await _validator.TestValidateAsync(request);
-        result.ShouldHaveValidationErrorFor(x => x.NewStatus);
+        result.ShouldHaveValidationErrorFor(x => x.Status);
     }
 }

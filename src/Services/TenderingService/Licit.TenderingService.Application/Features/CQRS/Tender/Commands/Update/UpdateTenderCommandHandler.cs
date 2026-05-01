@@ -11,6 +11,7 @@ public class UpdateTenderCommandHandler(
     IUnitOfWork unitOfWork,
     ITenderRepository tenderRepository,
     IValidator<UpdateTenderCommandRequest> validator,
+    ICurrentUserService currentUserService,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<UpdateTenderCommandRequest, UpdateTenderCommandResponse>
 {
     public async Task<UpdateTenderCommandResponse> Handle(UpdateTenderCommandRequest request, CancellationToken cancellationToken)
@@ -22,7 +23,10 @@ public class UpdateTenderCommandHandler(
         var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
-        if (tender.CreatedByUserId != request.UserId)
+        var userId = currentUserService.UserId
+            ?? throw new UnauthorizedException("Kullanici kimligi bulunamadi.");
+
+        if (tender.CreatedByUserId != userId)
             throw new ForbiddenException("Bu ihaleyi yalnızca sahibi güncelleyebilir.");
 
         tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate, request.CategoryId);

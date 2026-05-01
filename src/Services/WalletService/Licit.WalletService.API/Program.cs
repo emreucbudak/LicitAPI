@@ -3,6 +3,7 @@ using FlashMediator;
 using FluentValidation;
 using Licit.WalletService.API.Grpc;
 using Licit.WalletService.API.ExceptionHandlers;
+using Licit.WalletService.API.Services;
 using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
 using Licit.WalletService.Application.Interfaces;
@@ -62,6 +63,8 @@ builder.Services.AddDbContext<WalletDbContext>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IDepositIdempotencyStore, RedisDepositIdempotencyStore>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 
 // Redis
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>

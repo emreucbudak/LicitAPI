@@ -3,9 +3,9 @@ using FluentValidation;
 using FluentValidation.Results;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Delete;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById.Exceptions;
-using Licit.TenderingService.Domain.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
+using Licit.TenderingService.Domain.Exceptions;
 using Licit.TenderingService.UnitTests.Common;
 using NSubstitute;
 
@@ -16,6 +16,7 @@ public class DeleteTenderCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
     private readonly IValidator<DeleteTenderCommandRequest> _validator = Substitute.For<IValidator<DeleteTenderCommandRequest>>();
+    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly ITenderCacheInvalidator _cacheInvalidator = Substitute.For<ITenderCacheInvalidator>();
     private readonly DeleteTenderCommandHandler _handler;
 
@@ -23,16 +24,18 @@ public class DeleteTenderCommandHandlerTests
     {
         _validator.ValidateAsync(Arg.Any<DeleteTenderCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new DeleteTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator);
+        _currentUserService.UserId.Returns(Guid.NewGuid());
+        _handler = new DeleteTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _currentUserService, _cacheInvalidator);
     }
 
     [Fact]
     public async Task Handle_DraftTender_ShouldDeleteSuccessfully()
     {
         var tender = TenderTestFactory.CreateDraftTender();
+        _currentUserService.UserId.Returns(tender.CreatedByUserId);
         _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
 
-        await _handler.Handle(new DeleteTenderCommandRequest(tender.Id, tender.CreatedByUserId), CancellationToken.None);
+        await _handler.Handle(new DeleteTenderCommandRequest(tender.Id), CancellationToken.None);
 
         _tenderRepo.Received(1).Remove(tender);
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -42,9 +45,10 @@ public class DeleteTenderCommandHandlerTests
     public async Task Handle_ClosedTender_ShouldDeleteSuccessfully()
     {
         var tender = TenderTestFactory.CreateClosedTender();
+        _currentUserService.UserId.Returns(tender.CreatedByUserId);
         _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
 
-        await _handler.Handle(new DeleteTenderCommandRequest(tender.Id, tender.CreatedByUserId), CancellationToken.None);
+        await _handler.Handle(new DeleteTenderCommandRequest(tender.Id), CancellationToken.None);
 
         _tenderRepo.Received(1).Remove(tender);
     }
@@ -55,7 +59,7 @@ public class DeleteTenderCommandHandlerTests
         var id = Guid.NewGuid();
         _tenderRepo.GetByIdAsync(id).Returns((Tender?)null);
 
-        var act = () => _handler.Handle(new DeleteTenderCommandRequest(id, Guid.NewGuid()), CancellationToken.None);
+        var act = () => _handler.Handle(new DeleteTenderCommandRequest(id), CancellationToken.None);
 
         await act.Should().ThrowAsync<TenderNotFoundException>();
     }
@@ -64,9 +68,10 @@ public class DeleteTenderCommandHandlerTests
     public async Task Handle_ActiveTender_ShouldThrowActiveTenderDeletionException()
     {
         var tender = TenderTestFactory.CreateActiveTender();
+        _currentUserService.UserId.Returns(tender.CreatedByUserId);
         _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
 
-        var act = () => _handler.Handle(new DeleteTenderCommandRequest(tender.Id, tender.CreatedByUserId), CancellationToken.None);
+        var act = () => _handler.Handle(new DeleteTenderCommandRequest(tender.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<ActiveTenderDeletionException>();
     }
@@ -75,9 +80,9 @@ public class DeleteTenderCommandHandlerTests
     public async Task Handle_InvalidRequest_ShouldThrowValidationException()
     {
         _validator.ValidateAsync(Arg.Any<DeleteTenderCommandRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new ValidationResult(new[] { new ValidationFailure("Id", "Boş olamaz") }));
+            .Returns(new ValidationResult(new[] { new ValidationFailure("Id", "Bos olamaz") }));
 
-        var act = () => _handler.Handle(new DeleteTenderCommandRequest(Guid.Empty, Guid.NewGuid()), CancellationToken.None);
+        var act = () => _handler.Handle(new DeleteTenderCommandRequest(Guid.Empty), CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();
     }

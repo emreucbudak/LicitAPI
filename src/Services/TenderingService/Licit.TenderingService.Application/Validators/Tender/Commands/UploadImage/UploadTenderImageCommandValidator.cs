@@ -19,9 +19,6 @@ public class UploadTenderImageCommandValidator : AbstractValidator<UploadTenderI
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("Ihale kimligi belirtilmelidir.");
 
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("Kullanici kimligi belirtilmelidir.");
-
         RuleFor(x => x.ImageStream)
             .NotNull().WithMessage("Gorsel dosyasi belirtilmelidir.");
 

@@ -1,12 +1,5 @@
-using System.Security.Claims;
 using FlashMediator;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deduct;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Freeze;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetBalance;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Unfreeze;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Withdraw;
+using Licit.WalletService.Application.Features.CQRS.Wallet.CurrentUser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,76 +13,51 @@ public class WalletController(IMediator mediator) : ControllerBase
     [HttpGet("balance")]
     public async Task<IActionResult> GetBalance()
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new GetBalanceQueryRequest(userId));
+        var result = await mediator.Send(new GetCurrentUserBalanceQueryRequest());
         return Ok(result);
     }
 
     [HttpGet("transactions")]
     public async Task<IActionResult> GetTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new GetTransactionsQueryRequest(userId, page, pageSize));
+        var result = await mediator.Send(new GetCurrentUserTransactionsQueryRequest(page, pageSize));
         return Ok(result);
     }
 
     [HttpPost("deposit")]
     public async Task<IActionResult> Deposit(
-        [FromBody] DepositRequest request,
+        [FromBody] DepositCurrentUserFundsCommandRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new DepositFundsCommandRequest(
-            userId,
-            request.Amount,
-            idempotencyKey ?? string.Empty));
+        var result = await mediator.Send(request with { IdempotencyKey = idempotencyKey });
         return Ok(result);
     }
 
     [HttpPost("withdraw")]
-    public async Task<IActionResult> Withdraw([FromBody] WithdrawRequest request)
+    public async Task<IActionResult> Withdraw([FromBody] WithdrawCurrentUserFundsCommandRequest request)
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new WithdrawFundsCommandRequest(userId, request.Amount));
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
     [HttpPost("freeze")]
-    public async Task<IActionResult> Freeze([FromBody] FreezeRequest request)
+    public async Task<IActionResult> Freeze([FromBody] FreezeCurrentUserFundsCommandRequest request)
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new FreezeFundsCommandRequest(userId, request.Amount, request.ReferenceId, request.Description));
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
     [HttpPost("unfreeze")]
-    public async Task<IActionResult> Unfreeze([FromBody] UnfreezeRequest request)
+    public async Task<IActionResult> Unfreeze([FromBody] UnfreezeCurrentUserFundsCommandRequest request)
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new UnfreezeFundsCommandRequest(userId, request.Amount, request.ReferenceId, request.Description));
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
     [HttpPost("deduct")]
-    public async Task<IActionResult> Deduct([FromBody] DeductRequest request)
+    public async Task<IActionResult> Deduct([FromBody] DeductCurrentUserFundsCommandRequest request)
     {
-        var userId = GetCurrentUserId();
-        var result = await mediator.Send(new DeductFundsCommandRequest(userId, request.Amount, request.ReferenceId, request.Description));
+        var result = await mediator.Send(request);
         return Ok(result);
     }
-
-    private Guid GetCurrentUserId()
-    {
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                  ?? User.FindFirst("sub")?.Value
-                  ?? throw new UnauthorizedAccessException("Kullanıcı kimliği bulunamadı.");
-
-        return Guid.Parse(sub);
-    }
 }
-
-public record DepositRequest(decimal Amount);
-public record WithdrawRequest(decimal Amount);
-public record FreezeRequest(decimal Amount, Guid ReferenceId, string? Description);
-public record UnfreezeRequest(decimal Amount, Guid ReferenceId, string? Description);
-public record DeductRequest(decimal Amount, Guid ReferenceId, string? Description);

@@ -24,8 +24,8 @@ public class ChangeTenderStatusCommandHandler(
         var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
-        if (!Enum.TryParse<TenderStatus>(request.NewStatus, true, out var newStatus))
-            throw new InvalidTenderStatusException(request.NewStatus);
+        if (!Enum.TryParse<TenderStatus>(request.Status, true, out var newStatus))
+            throw new InvalidTenderStatusException(request.Status);
 
         try
         {

@@ -13,6 +13,7 @@ public class CreateTenderCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ITenderRepository _tenderRepo = Substitute.For<ITenderRepository>();
     private readonly IValidator<CreateTenderCommandRequest> _validator = Substitute.For<IValidator<CreateTenderCommandRequest>>();
+    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly ITenderCacheInvalidator _cacheInvalidator = Substitute.For<ITenderCacheInvalidator>();
     private readonly CreateTenderCommandHandler _handler;
 
@@ -20,16 +21,16 @@ public class CreateTenderCommandHandlerTests
     {
         _validator.ValidateAsync(Arg.Any<CreateTenderCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new CreateTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator);
+        _currentUserService.UserId.Returns(Guid.NewGuid());
+        _handler = new CreateTenderCommandHandler(_unitOfWork, _tenderRepo, _validator, _currentUserService, _cacheInvalidator);
     }
 
     private CreateTenderCommandRequest CreateValidRequest() => new(
-        Title: "Test İhale",
-        Description: "Test açıklama",
+        Title: "Test Ihale",
+        Description: "Test aciklama",
         StartingPrice: 1000m,
         StartDate: DateTime.UtcNow.AddDays(1),
         EndDate: DateTime.UtcNow.AddDays(30),
-        CreatedByUserId: Guid.NewGuid(),
         CategoryId: Guid.NewGuid(),
         Rules: null
     );
@@ -57,8 +58,8 @@ public class CreateTenderCommandHandlerTests
         {
             Rules = new List<CreateTenderRuleDto>
             {
-                new("Kural 1", "Açıklama 1", true),
-                new("Kural 2", "Açıklama 2", false)
+                new("Kural 1", "Aciklama 1", true),
+                new("Kural 2", "Aciklama 2", false)
             }
         };
 
@@ -83,7 +84,7 @@ public class CreateTenderCommandHandlerTests
     public async Task Handle_InvalidRequest_ShouldThrowValidationException()
     {
         _validator.ValidateAsync(Arg.Any<CreateTenderCommandRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new ValidationResult(new[] { new ValidationFailure("Title", "Boş olamaz") }));
+            .Returns(new ValidationResult(new[] { new ValidationFailure("Title", "Bos olamaz") }));
 
         var act = () => _handler.Handle(CreateValidRequest(), CancellationToken.None);
 

@@ -2,6 +2,7 @@ using System.Text;
 using FlashMediator;
 using FluentValidation;
 using Licit.TenderingService.API.ExceptionHandlers;
+using Licit.TenderingService.API.Services;
 using Licit.TenderingService.Application.Behaviors;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 using Licit.TenderingService.Application.Interfaces;
@@ -44,6 +45,8 @@ builder.Services.AddDbContext<TenderingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Unit of Work
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();

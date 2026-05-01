@@ -10,7 +10,7 @@ public class ChangeTenderStatusCommandValidator : AbstractValidator<ChangeTender
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("İhale kimliği belirtilmelidir.");
 
-        RuleFor(x => x.NewStatus)
+        RuleFor(x => x.Status)
             .NotEmpty().WithMessage("Yeni durum belirtilmelidir.");
     }
 }

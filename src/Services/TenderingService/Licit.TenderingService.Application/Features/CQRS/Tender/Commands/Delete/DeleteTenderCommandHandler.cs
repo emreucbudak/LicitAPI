@@ -10,6 +10,7 @@ public class DeleteTenderCommandHandler(
     IUnitOfWork unitOfWork,
     ITenderRepository tenderRepository,
     IValidator<DeleteTenderCommandRequest> validator,
+    ICurrentUserService currentUserService,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<DeleteTenderCommandRequest>
 {
     public async Task Handle(DeleteTenderCommandRequest request, CancellationToken cancellationToken)
@@ -21,7 +22,10 @@ public class DeleteTenderCommandHandler(
         var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
-        if (tender.CreatedByUserId != request.UserId)
+        var userId = currentUserService.UserId
+            ?? throw new UnauthorizedException("Kullanici kimligi bulunamadi.");
+
+        if (tender.CreatedByUserId != userId)
             throw new ForbiddenException("Bu ihaleyi yalnızca sahibi silebilir.");
 
         tender.ValidateForDeletion();

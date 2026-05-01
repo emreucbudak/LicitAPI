@@ -13,6 +13,7 @@ public class UploadTenderImageCommandHandler(
     ITenderRepository tenderRepository,
     IValidator<UploadTenderImageCommandRequest> validator,
     ITenderImageStorageService imageStorage,
+    ICurrentUserService currentUserService,
     ITenderCacheInvalidator cacheInvalidator) : IRequestHandler<UploadTenderImageCommandRequest, UploadTenderImageCommandResponse>
 {
     public async Task<UploadTenderImageCommandResponse> Handle(UploadTenderImageCommandRequest request, CancellationToken cancellationToken)
@@ -24,7 +25,10 @@ public class UploadTenderImageCommandHandler(
         var tender = await tenderRepository.GetByIdAsync(request.Id)
             ?? throw new TenderNotFoundException(request.Id);
 
-        if (tender.CreatedByUserId != request.UserId)
+        var userId = currentUserService.UserId
+            ?? throw new UnauthorizedException("Kullanici kimligi bulunamadi.");
+
+        if (tender.CreatedByUserId != userId)
             throw new ForbiddenException("Bu ihalenin gorselini yalnizca sahibi guncelleyebilir.");
 
         if (tender.Status != TenderStatus.Draft)
