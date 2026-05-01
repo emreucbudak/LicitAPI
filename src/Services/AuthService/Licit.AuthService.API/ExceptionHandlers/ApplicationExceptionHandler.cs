@@ -19,7 +19,7 @@ public class ApplicationExceptionHandler(ILogger<ApplicationExceptionHandler> lo
         logger.Log(
             logLevel,
             exception,
-            "Application exception handled. TraceId: {TraceId} Path: {Path} StatusCode: {StatusCode} ExceptionType: {ExceptionType} Message: {Message}",
+            "Uygulama hatası işlendi. İz kimliği: {TraceId} Yol: {Path} Durum kodu: {StatusCode} Hata tipi: {ExceptionType} Mesaj: {Message}",
             traceId,
             path,
             baseException.StatusCode,

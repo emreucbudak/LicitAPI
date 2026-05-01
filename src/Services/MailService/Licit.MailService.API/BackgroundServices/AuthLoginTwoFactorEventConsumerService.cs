@@ -58,14 +58,14 @@ public class AuthLoginTwoFactorEventConsumerService(
 
                     if (eventData is null)
                     {
-                        logger.LogWarning("Auth login 2FA event could not be deserialized.");
+                        logger.LogWarning("Auth giriş 2FA olayı JSON'dan okunamadı.");
                         await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                         return;
                     }
 
                     if (string.IsNullOrWhiteSpace(eventData.Email) || string.IsNullOrWhiteSpace(eventData.Code))
                     {
-                        logger.LogWarning("Auth login 2FA event is missing required fields.");
+                        logger.LogWarning("Auth giriş 2FA olayında zorunlu alanlar eksik.");
                         await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                         return;
                     }
@@ -79,23 +79,23 @@ public class AuthLoginTwoFactorEventConsumerService(
                         AuthLoginTwoFactorEmailTemplate.BuildBody(eventData)
                     ));
 
-                    logger.LogInformation("Auth login 2FA email processed for {Email}", eventData.Email);
+                    logger.LogInformation("Auth giriş 2FA e-postası işlendi. E-posta: {Email}", eventData.Email);
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 }
                 catch (JsonException ex)
                 {
-                    logger.LogWarning(ex, "Invalid auth login 2FA event payload received.");
+                    logger.LogWarning(ex, "Geçersiz auth giriş 2FA olayı yükü alındı.");
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Auth login 2FA event processing failed.");
+                    logger.LogError(ex, "Auth giriş 2FA olayı işlenemedi.");
                     await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true);
                 }
             };
 
             await channel.BasicConsumeAsync(QueueName, autoAck: false, consumer, stoppingToken);
-            logger.LogInformation("RabbitMQ auth login 2FA consumer started: {Queue}", QueueName);
+            logger.LogInformation("RabbitMQ auth giriş 2FA tüketicisi başlatıldı: {Queue}", QueueName);
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
@@ -105,7 +105,7 @@ public class AuthLoginTwoFactorEventConsumerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "RabbitMQ auth login 2FA connection error.");
+            logger.LogError(ex, "RabbitMQ auth giriş 2FA bağlantı hatası.");
         }
     }
 }

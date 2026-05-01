@@ -59,7 +59,7 @@ public class RabbitMqLoginEmailPublisher : ILoginEmailPublisher, IAsyncDisposabl
             code,
             expiresAt,
             userName,
-            "Auth login 2FA event published for {Email}",
+            "Auth giriş 2FA olayı yayınlandı. E-posta: {Email}",
             cancellationToken);
     }
 
@@ -76,7 +76,7 @@ public class RabbitMqLoginEmailPublisher : ILoginEmailPublisher, IAsyncDisposabl
             code,
             expiresAt,
             userName,
-            "Auth register verification event published for {Email}",
+            "Auth kayıt doğrulama olayı yayınlandı. E-posta: {Email}",
             cancellationToken);
     }
 
@@ -93,7 +93,7 @@ public class RabbitMqLoginEmailPublisher : ILoginEmailPublisher, IAsyncDisposabl
             code,
             expiresAt,
             userName,
-            "Auth password reset event published for {Email}",
+            "Auth parola sıfırlama olayı yayınlandı. E-posta: {Email}",
             cancellationToken);
     }
 

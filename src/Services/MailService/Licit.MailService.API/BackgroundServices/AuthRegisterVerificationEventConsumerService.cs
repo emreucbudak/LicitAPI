@@ -58,7 +58,7 @@ public class AuthRegisterVerificationEventConsumerService(
 
                     if (eventData is null || string.IsNullOrWhiteSpace(eventData.Email) || string.IsNullOrWhiteSpace(eventData.Code))
                     {
-                        logger.LogWarning("Auth register verification event is invalid.");
+                        logger.LogWarning("Auth kayıt doğrulama olayı geçersiz.");
                         await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                         return;
                     }
@@ -72,23 +72,23 @@ public class AuthRegisterVerificationEventConsumerService(
                         AuthRegisterVerificationEmailTemplate.BuildBody(eventData)
                     ));
 
-                    logger.LogInformation("Auth register verification email processed for {Email}", eventData.Email);
+                    logger.LogInformation("Auth kayıt doğrulama e-postası işlendi. E-posta: {Email}", eventData.Email);
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 }
                 catch (JsonException ex)
                 {
-                    logger.LogWarning(ex, "Invalid auth register verification event payload received.");
+                    logger.LogWarning(ex, "Geçersiz auth kayıt doğrulama olayı yükü alındı.");
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Auth register verification event processing failed.");
+                    logger.LogError(ex, "Auth kayıt doğrulama olayı işlenemedi.");
                     await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true);
                 }
             };
 
             await channel.BasicConsumeAsync(QueueName, autoAck: false, consumer, stoppingToken);
-            logger.LogInformation("RabbitMQ auth register verification consumer started: {Queue}", QueueName);
+            logger.LogInformation("RabbitMQ auth kayıt doğrulama tüketicisi başlatıldı: {Queue}", QueueName);
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
@@ -98,7 +98,7 @@ public class AuthRegisterVerificationEventConsumerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "RabbitMQ auth register verification connection error.");
+            logger.LogError(ex, "RabbitMQ auth kayıt doğrulama bağlantı hatası.");
         }
     }
 }

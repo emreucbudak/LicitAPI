@@ -27,7 +27,7 @@ public class ValidationExceptionHandler(ILogger<ValidationExceptionHandler> logg
 
         logger.LogWarning(
             validationException,
-            "Validation exception on {Path}. Errors: {@ValidationErrors}. TraceId: {TraceId}",
+            "Doğrulama hatası işlendi. Yol: {Path}. Hatalar: {@ValidationErrors}. İz kimliği: {TraceId}",
             path,
             failures.Select(error => new
             {

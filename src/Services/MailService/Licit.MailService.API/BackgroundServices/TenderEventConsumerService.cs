@@ -60,13 +60,13 @@ public class TenderEventConsumerService(
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Event işlenirken hata oluştu");
+                    logger.LogError(ex, "Olay işlenirken hata oluştu");
                     await channel.BasicNackAsync(ea.DeliveryTag, false, true);
                 }
             };
 
             await channel.BasicConsumeAsync(QueueName, autoAck: false, consumer, stoppingToken);
-            logger.LogInformation("RabbitMQ consumer başlatıldı: {Queue}", QueueName);
+            logger.LogInformation("RabbitMQ tüketicisi başlatıldı: {Queue}", QueueName);
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }

@@ -24,11 +24,11 @@ public class CachingPipelineBehavior<TRequest, TResponse>(
         var cached = await cache.GetStringAsync(key, cancellationToken);
         if (cached is not null)
         {
-            logger.LogDebug("Cache hit: {Key}", key);
+            logger.LogDebug("Önbellekte bulundu: {Key}", key);
             return JsonSerializer.Deserialize<TResponse>(cached)!;
         }
 
-        logger.LogDebug("Cache miss: {Key}", key);
+        logger.LogDebug("Önbellekte bulunamadı: {Key}", key);
         var response = await next();
 
         await cache.SetStringAsync(

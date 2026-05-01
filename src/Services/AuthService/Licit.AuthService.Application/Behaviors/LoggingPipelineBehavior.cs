@@ -14,7 +14,7 @@ public class LoggingPipelineBehavior<TRequest, TResponse>(
         var requestType = typeof(TRequest).FullName ?? typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
 
-        logger.LogInformation("CQRS request started. RequestType: {RequestType}", requestType);
+        logger.LogInformation("CQRS isteği başladı. İstek tipi: {RequestType}", requestType);
 
         try
         {
@@ -22,7 +22,7 @@ public class LoggingPipelineBehavior<TRequest, TResponse>(
             stopwatch.Stop();
 
             logger.LogInformation(
-                "CQRS request succeeded. RequestType: {RequestType} ElapsedMs: {ElapsedMs}",
+                "CQRS isteği başarıyla tamamlandı. İstek tipi: {RequestType} SüreMs: {ElapsedMs}",
                 requestType,
                 stopwatch.ElapsedMilliseconds);
 
@@ -34,7 +34,7 @@ public class LoggingPipelineBehavior<TRequest, TResponse>(
 
             logger.LogWarning(
                 exception,
-                "CQRS request failed. RequestType: {RequestType} ElapsedMs: {ElapsedMs} ExceptionType: {ExceptionType}",
+                "CQRS isteği başarısız oldu. İstek tipi: {RequestType} SüreMs: {ElapsedMs} Hata tipi: {ExceptionType}",
                 requestType,
                 stopwatch.ElapsedMilliseconds,
                 exception.GetType().FullName);

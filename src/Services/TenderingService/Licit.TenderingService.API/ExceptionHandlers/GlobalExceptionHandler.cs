@@ -14,7 +14,7 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
 
         logger.LogError(
             exception,
-            "Unhandled exception {ExceptionType} on {Path}. Message: {Message}. TraceId: {TraceId}",
+            "Yakalanmamış hata işlendi. Hata tipi: {ExceptionType} Yol: {Path}. Mesaj: {Message}. İz kimliği: {TraceId}",
             exception.GetType().Name,
             path,
             exception.Message,

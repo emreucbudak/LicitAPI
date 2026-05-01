@@ -15,7 +15,7 @@ public class CustomExceptionHandler(ILogger<CustomExceptionHandler> logger) : IE
 
         logger.LogWarning(
             exception,
-            "Handled custom exception {ExceptionType} on {Path}. StatusCode: {StatusCode}. Message: {Message}. TraceId: {TraceId}",
+            "Özel hata işlendi. Hata tipi: {ExceptionType} Yol: {Path}. Durum kodu: {StatusCode}. Mesaj: {Message}. İz kimliği: {TraceId}",
             exception.GetType().Name,
             path,
             statusCode,

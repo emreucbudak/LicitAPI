@@ -58,7 +58,7 @@ public class AuthPasswordResetEventConsumerService(
 
                     if (eventData is null || string.IsNullOrWhiteSpace(eventData.Email) || string.IsNullOrWhiteSpace(eventData.Code))
                     {
-                        logger.LogWarning("Auth password reset event is invalid.");
+                        logger.LogWarning("Auth parola sıfırlama olayı geçersiz.");
                         await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                         return;
                     }
@@ -72,23 +72,23 @@ public class AuthPasswordResetEventConsumerService(
                         AuthPasswordResetEmailTemplate.BuildBody(eventData)
                     ));
 
-                    logger.LogInformation("Auth password reset email processed for {Email}", eventData.Email);
+                    logger.LogInformation("Auth parola sıfırlama e-postası işlendi. E-posta: {Email}", eventData.Email);
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 }
                 catch (JsonException ex)
                 {
-                    logger.LogWarning(ex, "Invalid auth password reset event payload received.");
+                    logger.LogWarning(ex, "Geçersiz auth parola sıfırlama olayı yükü alındı.");
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Auth password reset event processing failed.");
+                    logger.LogError(ex, "Auth parola sıfırlama olayı işlenemedi.");
                     await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true);
                 }
             };
 
             await channel.BasicConsumeAsync(QueueName, autoAck: false, consumer, stoppingToken);
-            logger.LogInformation("RabbitMQ auth password reset consumer started: {Queue}", QueueName);
+            logger.LogInformation("RabbitMQ auth parola sıfırlama tüketicisi başlatıldı: {Queue}", QueueName);
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
@@ -98,7 +98,7 @@ public class AuthPasswordResetEventConsumerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "RabbitMQ auth password reset connection error.");
+            logger.LogError(ex, "RabbitMQ auth parola sıfırlama bağlantı hatası.");
         }
     }
 }

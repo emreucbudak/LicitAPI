@@ -18,7 +18,7 @@ public class ApplicationExceptionHandler(ILogger<ApplicationExceptionHandler> lo
         {
             logger.LogError(
                 baseException,
-                "Application exception. TraceId: {TraceId}, Path: {Path}, StatusCode: {StatusCode}, Message: {Message}",
+                "Uygulama hatası. İz kimliği: {TraceId}, Yol: {Path}, Durum kodu: {StatusCode}, Mesaj: {Message}",
                 traceId,
                 path,
                 statusCode,
@@ -28,7 +28,7 @@ public class ApplicationExceptionHandler(ILogger<ApplicationExceptionHandler> lo
         {
             logger.LogWarning(
                 baseException,
-                "Application exception. TraceId: {TraceId}, Path: {Path}, StatusCode: {StatusCode}, Message: {Message}",
+                "Uygulama hatası. İz kimliği: {TraceId}, Yol: {Path}, Durum kodu: {StatusCode}, Mesaj: {Message}",
                 traceId,
                 path,
                 statusCode,
