@@ -6,9 +6,6 @@ public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCo
 {
     public ChangePasswordCommandValidator()
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("Kullanici kimligi bos olamaz.");
-
         RuleFor(x => x.CurrentPassword)
             .NotEmpty().WithMessage("Mevcut sifre bos olamaz.");
 

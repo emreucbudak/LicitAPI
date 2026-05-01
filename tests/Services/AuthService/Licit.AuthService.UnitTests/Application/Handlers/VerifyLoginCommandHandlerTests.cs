@@ -19,6 +19,7 @@ public class VerifyLoginCommandHandlerTests
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly ILoginVerificationCodeStore _loginVerificationCodeStore = Substitute.For<ILoginVerificationCodeStore>();
     private readonly JwtSettings _jwtSettings = new() { Secret = "test", Issuer = "test", Audience = "test", AccessTokenExpirationMinutes = 15 };
+    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly IValidator<VerifyLoginCommandRequest> _validator = Substitute.For<IValidator<VerifyLoginCommandRequest>>();
     private readonly VerifyLoginCommandHandler _handler;
 
@@ -31,6 +32,7 @@ public class VerifyLoginCommandHandlerTests
             _tokenService,
             _loginVerificationCodeStore,
             _jwtSettings,
+            _currentUserService,
             _validator);
     }
 
@@ -39,8 +41,11 @@ public class VerifyLoginCommandHandlerTests
     {
         var userId = Guid.NewGuid();
         var user = new ApplicationUser { Id = userId, Email = "test@test.com", FirstName = "Ali", LastName = "Veli", IsActive = true };
-        var request = new VerifyLoginCommandRequest("test@test.com", "123456", userId, "test@test.com", "challenge-1");
+        var request = new VerifyLoginCommandRequest("test@test.com", "123456");
 
+        _currentUserService.UserId.Returns(userId);
+        _currentUserService.Email.Returns("test@test.com");
+        _currentUserService.TokenId.Returns("challenge-1");
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
         _loginVerificationCodeStore.GetAsync("test@test.com", Arg.Any<CancellationToken>())
             .Returns(new LoginVerificationChallenge("123456", "challenge-1"));
@@ -57,8 +62,11 @@ public class VerifyLoginCommandHandlerTests
     [Fact]
     public async Task Handle_EmailDoesNotMatchTemporaryToken_ShouldThrowInvalidVerificationCode()
     {
-        var request = new VerifyLoginCommandRequest("test@test.com", "123456", Guid.NewGuid(), "other@test.com", "challenge-1");
+        var request = new VerifyLoginCommandRequest("test@test.com", "123456");
 
+        _currentUserService.UserId.Returns(Guid.NewGuid());
+        _currentUserService.Email.Returns("other@test.com");
+        _currentUserService.TokenId.Returns("challenge-1");
         var act = () => _handler.Handle(request, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidVerificationCodeException>();
@@ -69,8 +77,11 @@ public class VerifyLoginCommandHandlerTests
     {
         var userId = Guid.NewGuid();
         var user = new ApplicationUser { Id = userId, Email = "test@test.com", IsActive = true };
-        var request = new VerifyLoginCommandRequest("test@test.com", "123456", userId, "test@test.com", "challenge-1");
+        var request = new VerifyLoginCommandRequest("test@test.com", "123456");
 
+        _currentUserService.UserId.Returns(userId);
+        _currentUserService.Email.Returns("test@test.com");
+        _currentUserService.TokenId.Returns("challenge-1");
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
         _loginVerificationCodeStore.GetAsync("test@test.com", Arg.Any<CancellationToken>())
             .Returns(new LoginVerificationChallenge("654321", "challenge-1"));
@@ -85,8 +96,11 @@ public class VerifyLoginCommandHandlerTests
     {
         var userId = Guid.NewGuid();
         var user = new ApplicationUser { Id = userId, Email = "test@test.com", IsActive = false };
-        var request = new VerifyLoginCommandRequest("test@test.com", "123456", userId, "test@test.com", "challenge-1");
+        var request = new VerifyLoginCommandRequest("test@test.com", "123456");
 
+        _currentUserService.UserId.Returns(userId);
+        _currentUserService.Email.Returns("test@test.com");
+        _currentUserService.TokenId.Returns("challenge-1");
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
 
         var act = () => _handler.Handle(request, CancellationToken.None);
@@ -101,7 +115,7 @@ public class VerifyLoginCommandHandlerTests
             .Returns(new ValidationResult(new[] { new ValidationFailure("Code", "Gecersiz kod") }));
 
         var act = () => _handler.Handle(
-            new VerifyLoginCommandRequest("test@test.com", "1", Guid.NewGuid(), "test@test.com", "challenge-1"),
+            new VerifyLoginCommandRequest("test@test.com", "1"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();

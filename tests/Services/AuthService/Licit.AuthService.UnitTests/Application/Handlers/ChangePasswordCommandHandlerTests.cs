@@ -19,6 +19,7 @@ public class ChangePasswordCommandHandlerTests
     private readonly IUserPasswordBloomService _userPasswordBloomService = Substitute.For<IUserPasswordBloomService>();
     private readonly IPasswordFingerprintService _passwordFingerprintService = Substitute.For<IPasswordFingerprintService>();
     private readonly IPasswordHasher<ApplicationUser> _passwordHasher = Substitute.For<IPasswordHasher<ApplicationUser>>();
+    private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly IValidator<ChangePasswordCommandRequest> _validator = Substitute.For<IValidator<ChangePasswordCommandRequest>>();
     private readonly ChangePasswordCommandHandler _handler;
 
@@ -32,6 +33,7 @@ public class ChangePasswordCommandHandlerTests
             _userPasswordBloomService,
             _passwordFingerprintService,
             _passwordHasher,
+            _currentUserService,
             _validator);
     }
 
@@ -48,6 +50,7 @@ public class ChangePasswordCommandHandlerTests
             CurrentPasswordFingerprint = "current-fingerprint"
         };
 
+        _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
         _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "CurrentPassword123!")
             .Returns(PasswordVerificationResult.Success);
@@ -65,7 +68,7 @@ public class ChangePasswordCommandHandlerTests
             .Returns(new[] { "current-fingerprint", "older-fingerprint-1", "older-fingerprint-2", "older-fingerprint-3" });
 
         var result = await _handler.Handle(
-            new ChangePasswordCommandRequest(userId, "CurrentPassword123!", "NewPassword123!"),
+            new ChangePasswordCommandRequest("CurrentPassword123!", "NewPassword123!"),
             CancellationToken.None);
 
         result.IsChanged.Should().BeTrue();
@@ -104,12 +107,13 @@ public class ChangePasswordCommandHandlerTests
             PasswordHash = "current-password-hash"
         };
 
+        _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
         _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "WrongPassword123!")
             .Returns(PasswordVerificationResult.Failed);
 
         var act = () => _handler.Handle(
-            new ChangePasswordCommandRequest(userId, "WrongPassword123!", "NewPassword123!"),
+            new ChangePasswordCommandRequest("WrongPassword123!", "NewPassword123!"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<CurrentPasswordInvalidException>();
@@ -130,6 +134,7 @@ public class ChangePasswordCommandHandlerTests
             CurrentPasswordFingerprint = "current-fingerprint"
         };
 
+        _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
         _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "CurrentPassword123!")
             .Returns(PasswordVerificationResult.Success);
@@ -153,7 +158,7 @@ public class ChangePasswordCommandHandlerTests
             });
 
         var act = () => _handler.Handle(
-            new ChangePasswordCommandRequest(userId, "CurrentPassword123!", "NewPassword123!"),
+            new ChangePasswordCommandRequest("CurrentPassword123!", "NewPassword123!"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<PasswordReuseNotAllowedException>();
@@ -177,6 +182,7 @@ public class ChangePasswordCommandHandlerTests
             CurrentPasswordFingerprint = "current-fingerprint"
         };
 
+        _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
         _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "CurrentPassword123!")
             .Returns(PasswordVerificationResult.Success);
@@ -190,7 +196,7 @@ public class ChangePasswordCommandHandlerTests
             .Returns(IdentityResult.Failed(new IdentityError { Description = "Password validation failed" }));
 
         var act = () => _handler.Handle(
-            new ChangePasswordCommandRequest(userId, "CurrentPassword123!", "NewPassword123!"),
+            new ChangePasswordCommandRequest("CurrentPassword123!", "NewPassword123!"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<BusinessRuleException>()

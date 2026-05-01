@@ -2,6 +2,7 @@ using System.Text;
 using FlashMediator;
 using FluentValidation;
 using Licit.AuthService.API.ExceptionHandlers;
+using Licit.AuthService.API.Services;
 using Licit.AuthService.Application.Behaviors;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
@@ -89,6 +90,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
 
 // Services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
     var configuration = builder.Configuration["Redis:ConnectionString"]

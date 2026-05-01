@@ -1,21 +1,18 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using FlashMediator;
-using Licit.AuthService.Application.Features.CQRS.Auth.ForgotPassword;
-using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
 using Licit.AuthService.Application.Constants;
-using Licit.AuthService.Application.DTOs;
+using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.ForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.GetProfile;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
-using Licit.AuthService.Application.Features.CQRS.Auth.ResetForgotPassword;
 using Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
 using Licit.AuthService.Application.Features.CQRS.Auth.Register;
+using Licit.AuthService.Application.Features.CQRS.Auth.ResetForgotPassword;
 using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
+using Licit.AuthService.Application.Features.CQRS.Auth.UpdateProfile;
 using Licit.AuthService.Application.Features.CQRS.Auth.VerifyForgotPassword;
 using Licit.AuthService.Application.Features.CQRS.Auth.VerifyLogin;
 using Licit.AuthService.Application.Features.CQRS.Auth.VerifyRegister;
-using Licit.AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -23,7 +20,7 @@ namespace Licit.AuthService.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IMediator mediator, UserManager<ApplicationUser> userManager) : ControllerBase
+public class AuthController(IMediator mediator) : ControllerBase
 {
     [EnableRateLimiting("auth")]
     [HttpPost("register")]
@@ -52,29 +49,9 @@ public class AuthController(IMediator mediator, UserManager<ApplicationUser> use
     [EnableRateLimiting("auth")]
     [Authorize(Policy = AuthPolicies.PendingTwoFactor)]
     [HttpPost("login/verify")]
-    public async Task<IActionResult> VerifyLogin([FromBody] VerifyLoginRequest request)
+    public async Task<IActionResult> VerifyLogin([FromBody] VerifyLoginCommandRequest request)
     {
-        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-            ?? User.FindFirst("sub")?.Value;
-        var email = User.FindFirst(ClaimTypes.Email)?.Value
-            ?? User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
-            ?? User.FindFirst("email")?.Value;
-        var tokenId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value
-            ?? User.FindFirst("jti")?.Value;
-
-        if (!Guid.TryParse(userIdValue, out var userId)
-            || string.IsNullOrWhiteSpace(email)
-            || string.IsNullOrWhiteSpace(tokenId))
-            return Unauthorized();
-
-        var result = await mediator.Send(new VerifyLoginCommandRequest(
-            request.Email,
-            request.Code,
-            userId,
-            email,
-            tokenId));
-
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
@@ -112,20 +89,9 @@ public class AuthController(IMediator mediator, UserManager<ApplicationUser> use
     [EnableRateLimiting("auth")]
     [Authorize(Policy = AuthPolicies.AccessToken)]
     [HttpPost("change-password")]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommandRequest request)
     {
-        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-            ?? User.FindFirst("sub")?.Value;
-
-        if (!Guid.TryParse(userIdValue, out var userId))
-            return Unauthorized();
-
-        var result = await mediator.Send(new ChangePasswordCommandRequest(
-            userId,
-            request.CurrentPassword,
-            request.NewPassword));
-
+        var result = await mediator.Send(request);
         return Ok(result);
     }
 
@@ -140,87 +106,15 @@ public class AuthController(IMediator mediator, UserManager<ApplicationUser> use
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var user = await GetCurrentUserAsync();
-        if (user is null)
-            return Unauthorized();
-
-        var profile = await CreateUserProfileDtoAsync(user);
-
+        var profile = await mediator.Send(new GetProfileQueryRequest());
         return Ok(profile);
     }
 
     [Authorize(Policy = AuthPolicies.AccessToken)]
     [HttpPut("me")]
-    public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest request)
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileCommandRequest request)
     {
-        if (!TryValidateProfileRequest(request, out var firstName, out var lastName))
-            return ValidationProblem(ModelState);
-
-        var user = await GetCurrentUserAsync();
-        if (user is null)
-            return Unauthorized();
-
-        user.FirstName = firstName;
-        user.LastName = lastName;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        var result = await userManager.UpdateAsync(user);
-        if (!result.Succeeded)
-        {
-            foreach (var error in result.Errors)
-                ModelState.AddModelError(error.Code, error.Description);
-
-            return ValidationProblem(ModelState);
-        }
-
-        var profile = await CreateUserProfileDtoAsync(user);
-
+        var profile = await mediator.Send(request);
         return Ok(profile);
     }
-
-    private async Task<ApplicationUser?> GetCurrentUserAsync()
-    {
-        var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-            ?? User.FindFirst("sub")?.Value;
-
-        return Guid.TryParse(userIdValue, out var userId)
-            ? await userManager.FindByIdAsync(userId.ToString())
-            : null;
-    }
-
-    private async Task<UserProfileDto> CreateUserProfileDtoAsync(ApplicationUser user)
-    {
-        var roles = await userManager.GetRolesAsync(user);
-
-        return new UserProfileDto(
-            Id: user.Id.ToString(),
-            Email: user.Email,
-            Role: roles.FirstOrDefault(),
-            FirstName: user.FirstName,
-            LastName: user.LastName
-        );
-    }
-
-    private bool TryValidateProfileRequest(UpdateProfileRequest? request, out string firstName, out string lastName)
-    {
-        firstName = request?.FirstName?.Trim() ?? string.Empty;
-        lastName = request?.LastName?.Trim() ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(firstName))
-            ModelState.AddModelError(nameof(UpdateProfileRequest.FirstName), "First name is required.");
-        else if (firstName.Length > 100)
-            ModelState.AddModelError(nameof(UpdateProfileRequest.FirstName), "First name must be 100 characters or fewer.");
-
-        if (string.IsNullOrWhiteSpace(lastName))
-            ModelState.AddModelError(nameof(UpdateProfileRequest.LastName), "Last name is required.");
-        else if (lastName.Length > 100)
-            ModelState.AddModelError(nameof(UpdateProfileRequest.LastName), "Last name must be 100 characters or fewer.");
-
-        return ModelState.IsValid;
-    }
 }
-
-public record VerifyLoginRequest(string Email, string Code);
-public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
-public record UpdateProfileRequest(string FirstName, string LastName);

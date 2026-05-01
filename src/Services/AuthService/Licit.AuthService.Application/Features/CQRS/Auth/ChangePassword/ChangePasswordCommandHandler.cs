@@ -15,6 +15,7 @@ public class ChangePasswordCommandHandler(
     IUserPasswordBloomService userPasswordBloomService,
     IPasswordFingerprintService passwordFingerprintService,
     IPasswordHasher<ApplicationUser> passwordHasher,
+    ICurrentUserService currentUserService,
     IValidator<ChangePasswordCommandRequest> validator) : IRequestHandler<ChangePasswordCommandRequest, ChangePasswordCommandResponse>
 {
     public async Task<ChangePasswordCommandResponse> Handle(ChangePasswordCommandRequest request, CancellationToken cancellationToken)
@@ -23,7 +24,10 @@ public class ChangePasswordCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var user = await userManager.FindByIdAsync(request.UserId.ToString())
+        var userId = currentUserService.UserId
+            ?? throw new UnauthorizedException("Gecersiz kullanici oturumu.");
+
+        var user = await userManager.FindByIdAsync(userId.ToString())
             ?? throw new UnauthorizedException("Gecersiz kullanici oturumu.");
 
         if (!IsPasswordMatch(passwordHasher, user, user.PasswordHash, request.CurrentPassword))

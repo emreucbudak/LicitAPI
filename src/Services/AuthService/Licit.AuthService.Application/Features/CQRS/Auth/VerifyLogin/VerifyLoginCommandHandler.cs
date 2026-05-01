@@ -2,6 +2,7 @@ using FlashMediator;
 using FluentValidation;
 using Licit.AuthService.Application.Common;
 using Licit.AuthService.Application.DTOs;
+using Licit.AuthService.Application.Exceptions;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login.Exceptions;
 using Licit.AuthService.Application.Features.CQRS.Auth.VerifyLogin.Exceptions;
 using Licit.AuthService.Application.Interfaces;
@@ -15,6 +16,7 @@ public class VerifyLoginCommandHandler(
     ITokenService tokenService,
     ILoginVerificationCodeStore loginVerificationCodeStore,
     JwtSettings jwtSettings,
+    ICurrentUserService currentUserService,
     IValidator<VerifyLoginCommandRequest> validator) : IRequestHandler<VerifyLoginCommandRequest, VerifyLoginCommandResponse>
 {
     public async Task<VerifyLoginCommandResponse> Handle(VerifyLoginCommandRequest request, CancellationToken cancellationToken)
@@ -23,10 +25,18 @@ public class VerifyLoginCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        if (!string.Equals(request.Email, request.TemporaryTokenEmail, StringComparison.OrdinalIgnoreCase))
+        var userId = currentUserService.UserId
+            ?? throw new UnauthorizedException("Gecersiz gecici oturum.");
+        var temporaryTokenEmail = currentUserService.Email;
+        var temporaryTokenId = currentUserService.TokenId;
+
+        if (string.IsNullOrWhiteSpace(temporaryTokenEmail) || string.IsNullOrWhiteSpace(temporaryTokenId))
+            throw new UnauthorizedException("Gecersiz gecici oturum.");
+
+        if (!string.Equals(request.Email, temporaryTokenEmail, StringComparison.OrdinalIgnoreCase))
             throw new InvalidVerificationCodeException();
 
-        var user = await userManager.FindByIdAsync(request.UserId.ToString());
+        var user = await userManager.FindByIdAsync(userId.ToString());
         if (user == null || !string.Equals(user.Email, request.Email, StringComparison.OrdinalIgnoreCase))
             throw new InvalidVerificationCodeException();
 
@@ -35,7 +45,7 @@ public class VerifyLoginCommandHandler(
 
         var storedChallenge = await loginVerificationCodeStore.GetAsync(request.Email, cancellationToken);
         if (storedChallenge == null
-            || !string.Equals(storedChallenge.ChallengeId, request.TemporaryTokenId, StringComparison.Ordinal)
+            || !string.Equals(storedChallenge.ChallengeId, temporaryTokenId, StringComparison.Ordinal)
             || !VerificationCodeHelper.CodesMatch(storedChallenge.Code, request.Code))
             throw new InvalidVerificationCodeException();
 
