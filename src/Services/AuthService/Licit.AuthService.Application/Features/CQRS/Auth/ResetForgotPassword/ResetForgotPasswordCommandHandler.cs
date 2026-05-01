@@ -15,8 +15,6 @@ public class ResetForgotPasswordCommandHandler(
     ITokenService tokenService,
     IPasswordResetVerificationStore passwordResetVerificationStore,
     IPasswordHistoryRepository passwordHistoryRepository,
-    IUserPasswordBloomService userPasswordBloomService,
-    IPasswordFingerprintService passwordFingerprintService,
     IPasswordHasher<ApplicationUser> passwordHasher,
     IValidator<ResetForgotPasswordCommandRequest> validator) : IRequestHandler<ResetForgotPasswordCommandRequest, ResetForgotPasswordCommandResponse>
 {
@@ -58,21 +56,11 @@ public class ResetForgotPasswordCommandHandler(
                     user.Id,
                     PasswordHistoryLimit,
                     cancellationToken);
-                var existingFingerprints = await userPasswordBloomService.GetFingerprintsAsync(user.Id, cancellationToken);
-                var newPasswordFingerprint = passwordFingerprintService.CreateFingerprint(request.NewPassword);
-                var mayContainExistingPassword = await userPasswordBloomService.MayContainAsync(
-                    user.Id,
-                    newPasswordFingerprint,
-                    cancellationToken);
 
-                if (PasswordReuseHelper.ShouldCheckHashes(user, latestPasswordHistory, existingFingerprints, mayContainExistingPassword)
-                    && PasswordReuseHelper.MatchesCurrentOrHistory(user, request.NewPassword, latestPasswordHistory, passwordHasher))
-                {
+                if (PasswordReuseHelper.MatchesCurrentOrHistory(user, request.NewPassword, latestPasswordHistory, passwordHasher))
                     throw new PasswordReuseNotAllowedException();
-                }
 
                 var currentPasswordHash = user.PasswordHash;
-                var currentPasswordFingerprint = user.CurrentPasswordFingerprint;
 
                 if (!string.IsNullOrWhiteSpace(currentPasswordHash))
                 {
@@ -93,47 +81,16 @@ public class ResetForgotPasswordCommandHandler(
                         passwordHistoryRepository.RemoveRange(passwordHistoriesToRemove);
                 }
 
-                user.CurrentPasswordFingerprint = newPasswordFingerprint;
-
                 var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
                 var resetResult = await userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
                 if (!resetResult.Succeeded)
-                {
-                    user.CurrentPasswordFingerprint = currentPasswordFingerprint;
                     throw new BusinessRuleException(string.Join(", ", resetResult.Errors.Select(e => e.Description)));
-                }
 
                 await passwordHistoryRepository.SaveChangesAsync(cancellationToken);
-
-                await userPasswordBloomService.SetFingerprintsAsync(
-                    user.Id,
-                    PasswordReuseHelper.BuildFingerprintWindow(
-                        newPasswordFingerprint,
-                        currentPasswordFingerprint,
-                        NormalizeFingerprintsForRotation(existingFingerprints, currentPasswordFingerprint)),
-                    cancellationToken);
             }
         }
 
         await passwordResetVerificationStore.RemoveAsync(request.TemporaryToken, cancellationToken);
         return new ResetForgotPasswordCommandResponse(true);
-    }
-
-    private static IReadOnlyList<string> NormalizeFingerprintsForRotation(
-        IReadOnlyList<string> existingFingerprints,
-        string? currentPasswordFingerprint)
-    {
-        if (string.IsNullOrWhiteSpace(currentPasswordFingerprint))
-            return existingFingerprints;
-
-        if (existingFingerprints.Count > 0
-            && string.Equals(existingFingerprints[0], currentPasswordFingerprint, StringComparison.Ordinal))
-        {
-            return existingFingerprints;
-        }
-
-        return new[] { currentPasswordFingerprint }
-            .Concat(existingFingerprints)
-            .ToArray();
     }
 }

@@ -13,8 +13,6 @@ namespace Licit.AuthService.Application.Features.CQRS.Auth.VerifyRegister;
 public class VerifyRegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
     IRegisterVerificationStore registerVerificationStore,
-    IEmailBloomService emailBloomService,
-    IUserPasswordBloomService userPasswordBloomService,
     IValidator<VerifyRegisterCommandRequest> validator) : IRequestHandler<VerifyRegisterCommandRequest, VerifyRegisterCommandResponse>
 {
     public async Task<VerifyRegisterCommandResponse> Handle(VerifyRegisterCommandRequest request, CancellationToken cancellationToken)
@@ -58,8 +56,7 @@ public class VerifyRegisterCommandHandler(
             Email = pendingRegistration.Email,
             FirstName = pendingRegistration.FirstName,
             LastName = pendingRegistration.LastName,
-            PasswordHash = pendingRegistration.PasswordHash,
-            CurrentPasswordFingerprint = pendingRegistration.PasswordFingerprint
+            PasswordHash = pendingRegistration.PasswordHash
         };
 
         var createResult = await userManager.CreateAsync(user);
@@ -69,12 +66,6 @@ public class VerifyRegisterCommandHandler(
         var roleResult = await userManager.AddToRoleAsync(user, "User");
         if (!roleResult.Succeeded)
             throw new UserCreationFailedException(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
-
-        await emailBloomService.AddAsync(pendingRegistration.Email, cancellationToken);
-        await userPasswordBloomService.SetFingerprintsAsync(
-            user.Id,
-            new[] { pendingRegistration.PasswordFingerprint },
-            cancellationToken);
 
         await registerVerificationStore.RemoveAsync(email, cancellationToken);
 
@@ -100,7 +91,19 @@ public class VerifyRegisterCommandHandler(
             return;
         }
 
-        pendingRegistration.RemainingAttempts = remainingAttempts;
-        await registerVerificationStore.StoreAsync(email, pendingRegistration, remainingLifetime, cancellationToken);
+        await registerVerificationStore.StoreAsync(
+            email,
+            new PendingRegistrationVerification
+            {
+                Email = pendingRegistration.Email,
+                PasswordHash = pendingRegistration.PasswordHash,
+                FirstName = pendingRegistration.FirstName,
+                LastName = pendingRegistration.LastName,
+                Code = pendingRegistration.Code,
+                ExpiresAtUtc = pendingRegistration.ExpiresAtUtc,
+                RemainingAttempts = remainingAttempts
+            },
+            remainingLifetime,
+            cancellationToken);
     }
 }

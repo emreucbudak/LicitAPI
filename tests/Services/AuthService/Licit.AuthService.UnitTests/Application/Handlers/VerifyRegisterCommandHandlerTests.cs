@@ -17,8 +17,6 @@ public class VerifyRegisterCommandHandlerTests
 {
     private readonly UserManager<ApplicationUser> _userManager = UserManagerMockHelper.CreateMock();
     private readonly IRegisterVerificationStore _registerVerificationStore = Substitute.For<IRegisterVerificationStore>();
-    private readonly IEmailBloomService _emailBloomService = Substitute.For<IEmailBloomService>();
-    private readonly IUserPasswordBloomService _userPasswordBloomService = Substitute.For<IUserPasswordBloomService>();
     private readonly IValidator<VerifyRegisterCommandRequest> _validator = Substitute.For<IValidator<VerifyRegisterCommandRequest>>();
     private readonly VerifyRegisterCommandHandler _handler;
 
@@ -29,8 +27,6 @@ public class VerifyRegisterCommandHandlerTests
         _handler = new VerifyRegisterCommandHandler(
             _userManager,
             _registerVerificationStore,
-            _emailBloomService,
-            _userPasswordBloomService,
             _validator);
     }
 
@@ -45,7 +41,6 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
-            PasswordFingerprint = "password-fingerprint",
             Code = "123456",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 5
@@ -64,17 +59,9 @@ public class VerifyRegisterCommandHandlerTests
             && user.UserName == email
             && user.FirstName == "Ali"
             && user.LastName == "Veli"
-            && user.PasswordHash == "hashed-password"
-            && user.CurrentPasswordFingerprint == "password-fingerprint"));
+            && user.PasswordHash == "hashed-password"));
         await _userManager.DidNotReceive().CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>());
         await _userManager.Received(1).AddToRoleAsync(Arg.Any<ApplicationUser>(), "User");
-        await _emailBloomService.Received(1).AddAsync(email, Arg.Any<CancellationToken>());
-        await _userPasswordBloomService.Received(1).SetFingerprintsAsync(
-            Arg.Any<Guid>(),
-            Arg.Is<IReadOnlyCollection<string>>(fingerprints =>
-                fingerprints.Count == 1
-                && fingerprints.Contains("password-fingerprint")),
-            Arg.Any<CancellationToken>());
         await _registerVerificationStore.Received(1).RemoveAsync(email, Arg.Any<CancellationToken>());
     }
 
@@ -89,7 +76,6 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
-            PasswordFingerprint = "password-fingerprint",
             Code = "654321",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 5
@@ -122,7 +108,6 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
-            PasswordFingerprint = "password-fingerprint",
             Code = "654321",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 1
@@ -151,7 +136,6 @@ public class VerifyRegisterCommandHandlerTests
             FirstName = "Ali",
             LastName = "Veli",
             PasswordHash = "hashed-password",
-            PasswordFingerprint = "password-fingerprint",
             Code = "123456",
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(5),
             RemainingAttempts = 5
@@ -163,11 +147,6 @@ public class VerifyRegisterCommandHandlerTests
         var act = () => _handler.Handle(new VerifyRegisterCommandRequest(email, "123456"), CancellationToken.None);
 
         await act.Should().ThrowAsync<EmailAlreadyExistsException>();
-        await _emailBloomService.DidNotReceive().AddAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        await _userPasswordBloomService.DidNotReceive().SetFingerprintsAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<IReadOnlyCollection<string>>(),
-            Arg.Any<CancellationToken>());
         await _registerVerificationStore.Received(1).RemoveAsync(email, Arg.Any<CancellationToken>());
     }
 }

@@ -46,13 +46,6 @@ builder.Services.AddOptions<AuthVerificationSettings>()
     .ValidateOnStart();
 var authVerificationSettings = builder.Configuration.GetSection("AuthVerification").Get<AuthVerificationSettings>()!;
 builder.Services.AddSingleton(authVerificationSettings);
-builder.Services.AddOptions<AuthBloomFilterSettings>()
-    .BindConfiguration("AuthBloomFilter")
-    .ValidateOnStart();
-var authBloomFilterSettings = builder.Configuration.GetSection("AuthBloomFilter").Get<AuthBloomFilterSettings>() ?? new AuthBloomFilterSettings();
-if (string.IsNullOrWhiteSpace(authBloomFilterSettings.PasswordFingerprintSecret))
-    authBloomFilterSettings.PasswordFingerprintSecret = jwtSettings.Secret;
-builder.Services.AddSingleton(authBloomFilterSettings);
 
 // CORS
 builder.Services.AddCors(options =>
@@ -103,9 +96,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 builder.Services.AddScoped<ILoginVerificationCodeStore, RedisLoginVerificationCodeStore>();
 builder.Services.AddScoped<IRegisterVerificationStore, RedisRegisterVerificationStore>();
 builder.Services.AddScoped<IPasswordResetVerificationStore, RedisPasswordResetVerificationStore>();
-builder.Services.AddScoped<IEmailBloomService, RedisEmailBloomService>();
-builder.Services.AddScoped<IUserPasswordBloomService, RedisUserPasswordBloomService>();
-builder.Services.AddScoped<IPasswordFingerprintService, PasswordFingerprintService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton(sp =>
     RabbitMqLoginEmailPublisher.CreateAsync(

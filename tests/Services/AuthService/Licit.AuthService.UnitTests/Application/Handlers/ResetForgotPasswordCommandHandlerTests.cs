@@ -4,6 +4,7 @@ using FluentValidation.Results;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Exceptions;
+using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword.Exceptions;
 using Licit.AuthService.Application.Features.CQRS.Auth.ResetForgotPassword;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
@@ -19,8 +20,6 @@ public class ResetForgotPasswordCommandHandlerTests
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IPasswordResetVerificationStore _passwordResetVerificationStore = Substitute.For<IPasswordResetVerificationStore>();
     private readonly IPasswordHistoryRepository _passwordHistoryRepository = Substitute.For<IPasswordHistoryRepository>();
-    private readonly IUserPasswordBloomService _userPasswordBloomService = Substitute.For<IUserPasswordBloomService>();
-    private readonly IPasswordFingerprintService _passwordFingerprintService = Substitute.For<IPasswordFingerprintService>();
     private readonly IPasswordHasher<ApplicationUser> _passwordHasher = Substitute.For<IPasswordHasher<ApplicationUser>>();
     private readonly IValidator<ResetForgotPasswordCommandRequest> _validator = Substitute.For<IValidator<ResetForgotPasswordCommandRequest>>();
     private readonly ResetForgotPasswordCommandHandler _handler;
@@ -34,14 +33,12 @@ public class ResetForgotPasswordCommandHandlerTests
             _tokenService,
             _passwordResetVerificationStore,
             _passwordHistoryRepository,
-            _userPasswordBloomService,
-            _passwordFingerprintService,
             _passwordHasher,
             _validator);
     }
 
     [Fact]
-    public async Task Handle_VerifiedChallenge_ShouldRotateHistoryFingerprintsAndRemoveChallenge()
+    public async Task Handle_VerifiedChallenge_ShouldRotateHistoryAndRemoveChallenge()
     {
         var userId = Guid.NewGuid();
         var temporaryToken = "temporary-token";
@@ -50,8 +47,7 @@ public class ResetForgotPasswordCommandHandlerTests
         {
             Id = userId,
             Email = "test@test.com",
-            PasswordHash = "current-password-hash",
-            CurrentPasswordFingerprint = "current-fingerprint"
+            PasswordHash = "current-password-hash"
         };
         var challenge = new PasswordResetVerificationChallenge
         {
@@ -75,19 +71,14 @@ public class ResetForgotPasswordCommandHandlerTests
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-2" },
                 oldestHistory
             });
-        _passwordFingerprintService.CreateFingerprint("NewPassword123!").Returns("new-fingerprint");
-        _userPasswordBloomService.MayContainAsync(userId, "new-fingerprint", Arg.Any<CancellationToken>()).Returns(false);
         _userManager.GeneratePasswordResetTokenAsync(user).Returns("identity-reset-token");
         _userManager.ResetPasswordAsync(user, "identity-reset-token", "NewPassword123!").Returns(IdentityResult.Success);
-        _userPasswordBloomService.GetFingerprintsAsync(userId, Arg.Any<CancellationToken>())
-            .Returns(new[] { "current-fingerprint", "older-fingerprint-1", "older-fingerprint-2", "older-fingerprint-3" });
 
         var result = await _handler.Handle(
             new ResetForgotPasswordCommandRequest(temporaryToken, "NewPassword123!"),
             CancellationToken.None);
 
         result.IsReset.Should().BeTrue();
-        user.CurrentPasswordFingerprint.Should().Be("new-fingerprint");
         await _passwordHistoryRepository.Received(1).AddAsync(
             Arg.Is<PasswordHistory>(history =>
                 history.UserId == userId
@@ -99,17 +90,6 @@ public class ResetForgotPasswordCommandHandlerTests
         await _userManager.Received(1).GeneratePasswordResetTokenAsync(user);
         await _userManager.Received(1).ResetPasswordAsync(user, "identity-reset-token", "NewPassword123!");
         await _passwordHistoryRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _userPasswordBloomService.Received(1).SetFingerprintsAsync(
-            userId,
-            Arg.Is<IReadOnlyCollection<string>>(fingerprints =>
-                fingerprints.SequenceEqual(new[]
-                {
-                    "new-fingerprint",
-                    "current-fingerprint",
-                    "older-fingerprint-1",
-                    "older-fingerprint-2"
-                })),
-            Arg.Any<CancellationToken>());
         await _passwordResetVerificationStore.Received(1).RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
     }
 
@@ -141,7 +121,7 @@ public class ResetForgotPasswordCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_BloomHitAndHistoryMatch_ShouldThrowPasswordReuseNotAllowedException()
+    public async Task Handle_NewPasswordMatchesHistory_ShouldThrowPasswordReuseNotAllowedException()
     {
         var userId = Guid.NewGuid();
         var temporaryToken = "temporary-token";
@@ -149,8 +129,7 @@ public class ResetForgotPasswordCommandHandlerTests
         {
             Id = userId,
             Email = "test@test.com",
-            PasswordHash = "current-password-hash",
-            CurrentPasswordFingerprint = "current-fingerprint"
+            PasswordHash = "current-password-hash"
         };
         var challenge = new PasswordResetVerificationChallenge
         {
@@ -173,18 +152,8 @@ public class ResetForgotPasswordCommandHandlerTests
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-1" },
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-2" }
             });
-        _userPasswordBloomService.GetFingerprintsAsync(userId, Arg.Any<CancellationToken>())
-            .Returns(new[] { "current-fingerprint", "older-fingerprint-1", "older-fingerprint-2" });
-        _passwordFingerprintService.CreateFingerprint("NewPassword123!").Returns("new-fingerprint");
-        _userPasswordBloomService.MayContainAsync(userId, "new-fingerprint", Arg.Any<CancellationToken>()).Returns(true);
-        _passwordHasher.VerifyHashedPassword(Arg.Any<ApplicationUser>(), Arg.Any<string>(), "NewPassword123!")
-            .Returns(callInfo =>
-            {
-                var passwordHash = callInfo.ArgAt<string>(1);
-                return passwordHash == "history-hash-2"
-                    ? PasswordVerificationResult.Success
-                    : PasswordVerificationResult.Failed;
-            });
+        _passwordHasher.VerifyHashedPassword(Arg.Any<ApplicationUser>(), "history-hash-2", "NewPassword123!")
+            .Returns(PasswordVerificationResult.Success);
 
         var act = () => _handler.Handle(
             new ResetForgotPasswordCommandRequest(temporaryToken, "NewPassword123!"),
@@ -194,10 +163,6 @@ public class ResetForgotPasswordCommandHandlerTests
         await _userManager.DidNotReceive().GeneratePasswordResetTokenAsync(Arg.Any<ApplicationUser>());
         await _passwordHistoryRepository.DidNotReceive().AddAsync(Arg.Any<PasswordHistory>(), Arg.Any<CancellationToken>());
         await _passwordHistoryRepository.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-        await _userPasswordBloomService.DidNotReceive().SetFingerprintsAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<IReadOnlyCollection<string>>(),
-            Arg.Any<CancellationToken>());
         await _passwordResetVerificationStore.DidNotReceive().RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
     }
 }

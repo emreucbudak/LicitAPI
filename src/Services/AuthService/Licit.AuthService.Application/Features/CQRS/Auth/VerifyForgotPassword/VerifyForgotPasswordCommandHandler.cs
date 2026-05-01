@@ -50,9 +50,20 @@ public class VerifyForgotPasswordCommandHandler(
             throw new UnauthorizedException("Gecersiz veya suresi dolmus sifre sifirlama istegi.");
         }
 
-        challenge.IsCodeVerified = true;
-        challenge.Code = string.Empty;
-        await passwordResetVerificationStore.StoreAsync(request.TemporaryToken, challenge, remainingLifetime, cancellationToken);
+        await passwordResetVerificationStore.StoreAsync(
+            request.TemporaryToken,
+            new PasswordResetVerificationChallenge
+            {
+                UserId = challenge.UserId,
+                Email = challenge.Email,
+                IsCodeVerified = true,
+                Code = string.Empty,
+                ChallengeId = challenge.ChallengeId,
+                ExpiresAtUtc = challenge.ExpiresAtUtc,
+                RemainingAttempts = challenge.RemainingAttempts
+            },
+            remainingLifetime,
+            cancellationToken);
 
         return new VerifyForgotPasswordCommandResponse(true);
     }
@@ -76,7 +87,19 @@ public class VerifyForgotPasswordCommandHandler(
             return;
         }
 
-        challenge.RemainingAttempts = remainingAttempts;
-        await passwordResetVerificationStore.StoreAsync(temporaryToken, challenge, remainingLifetime, cancellationToken);
+        await passwordResetVerificationStore.StoreAsync(
+            temporaryToken,
+            new PasswordResetVerificationChallenge
+            {
+                UserId = challenge.UserId,
+                Email = challenge.Email,
+                Code = challenge.Code,
+                ChallengeId = challenge.ChallengeId,
+                ExpiresAtUtc = challenge.ExpiresAtUtc,
+                RemainingAttempts = remainingAttempts,
+                IsCodeVerified = challenge.IsCodeVerified
+            },
+            remainingLifetime,
+            cancellationToken);
     }
 }

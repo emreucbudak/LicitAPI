@@ -5,17 +5,17 @@ namespace Licit.AuthService.Application.DTOs;
 public record JwtSettings
 {
     [Required, MinLength(32)]
-    public string Secret { get; set; } = null!;
+    public string Secret { get; init; } = null!;
 
     [Required]
-    public string Issuer { get; set; } = null!;
+    public string Issuer { get; init; } = null!;
 
     [Required]
-    public string Audience { get; set; } = null!;
+    public string Audience { get; init; } = null!;
 
     [Range(1, 1440)]
-    public int AccessTokenExpirationMinutes { get; set; } = 15;
+    public int AccessTokenExpirationMinutes { get; init; } = 15;
 
     [Range(1, 365)]
-    public int RefreshTokenExpirationDays { get; set; } = 7;
+    public int RefreshTokenExpirationDays { get; init; } = 7;
 }
