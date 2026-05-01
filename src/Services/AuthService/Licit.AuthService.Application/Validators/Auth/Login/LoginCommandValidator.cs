@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.AuthService.Application.Features.CQRS.Auth.Login;
 
-namespace Licit.AuthService.Application.Features.CQRS.Auth.Login;
+namespace Licit.AuthService.Application.Validators.Auth.Login;
 
 public class LoginCommandValidator : AbstractValidator<LoginCommandRequest>
 {

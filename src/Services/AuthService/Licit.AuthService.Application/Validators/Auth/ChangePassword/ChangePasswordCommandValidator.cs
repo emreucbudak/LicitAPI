@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
 
-namespace Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
+namespace Licit.AuthService.Application.Validators.Auth.ChangePassword;
 
 public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommandRequest>
 {

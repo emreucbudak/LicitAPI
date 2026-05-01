@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
 
-namespace Licit.AuthService.Application.Features.CQRS.Auth.RefreshToken;
+namespace Licit.AuthService.Application.Validators.Auth.RefreshToken;
 
 public class RefreshTokenCommandValidator : AbstractValidator<RefreshTokenCommandRequest>
 {

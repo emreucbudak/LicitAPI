@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
 
-namespace Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
+namespace Licit.AuthService.Application.Validators.Auth.RevokeToken;
 
 public class RevokeTokenCommandValidator : AbstractValidator<RevokeTokenCommandRequest>
 {

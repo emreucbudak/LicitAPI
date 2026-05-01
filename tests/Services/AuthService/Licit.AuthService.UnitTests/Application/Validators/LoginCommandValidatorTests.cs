@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
 using Licit.AuthService.Application.Features.CQRS.Auth.Login;
+using Licit.AuthService.Application.Validators.Auth.Login;
 
 namespace Licit.AuthService.UnitTests.Application.Validators;
 

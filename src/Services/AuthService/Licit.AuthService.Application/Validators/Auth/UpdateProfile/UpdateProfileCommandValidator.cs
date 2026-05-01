@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.AuthService.Application.Features.CQRS.Auth.UpdateProfile;
 
-namespace Licit.AuthService.Application.Features.CQRS.Auth.UpdateProfile;
+namespace Licit.AuthService.Application.Validators.Auth.UpdateProfile;
 
 public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileCommandRequest>
 {

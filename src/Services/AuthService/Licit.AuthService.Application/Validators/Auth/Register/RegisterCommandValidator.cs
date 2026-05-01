@@ -1,6 +1,7 @@
 using FluentValidation;
+using Licit.AuthService.Application.Features.CQRS.Auth.Register;
 
-namespace Licit.AuthService.Application.Features.CQRS.Auth.Register;
+namespace Licit.AuthService.Application.Validators.Auth.Register;
 
 public class RegisterCommandValidator : AbstractValidator<RegisterCommandRequest>
 {
