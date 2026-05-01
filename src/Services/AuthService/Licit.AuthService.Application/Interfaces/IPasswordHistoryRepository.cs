@@ -9,9 +9,9 @@ public interface IPasswordHistoryRepository
         int take,
         CancellationToken cancellationToken = default);
 
-    Task AddAsync(PasswordHistory passwordHistory, CancellationToken cancellationToken = default);
-
-    void RemoveRange(IEnumerable<PasswordHistory> passwordHistories);
-
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task AddPreviousPasswordAsync(
+        Guid userId,
+        string? passwordHash,
+        int historyLimit,
+        CancellationToken cancellationToken = default);
 }

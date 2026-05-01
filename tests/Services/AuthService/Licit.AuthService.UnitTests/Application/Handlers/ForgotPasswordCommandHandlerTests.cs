@@ -2,7 +2,7 @@ using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
 using Licit.AuthService.Application.DTOs;
-using Licit.AuthService.Application.Features.CQRS.Auth.ForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ForgotPassword;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Licit.AuthService.UnitTests.Common;

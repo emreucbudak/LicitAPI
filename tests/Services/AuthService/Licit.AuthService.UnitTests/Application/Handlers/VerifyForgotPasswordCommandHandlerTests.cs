@@ -4,7 +4,7 @@ using FluentValidation.Results;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Exceptions;
-using Licit.AuthService.Application.Features.CQRS.Auth.VerifyForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.VerifyForgotPassword;
 using Licit.AuthService.Application.Interfaces;
 using NSubstitute;
 

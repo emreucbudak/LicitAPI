@@ -4,8 +4,8 @@ using FluentValidation.Results;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
 using Licit.AuthService.Application.Exceptions;
-using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword.Exceptions;
-using Licit.AuthService.Application.Features.CQRS.Auth.ResetForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ChangePassword.Exceptions;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ResetForgotPassword;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Licit.AuthService.UnitTests.Common;
@@ -42,7 +42,6 @@ public class ResetForgotPasswordCommandHandlerTests
     {
         var userId = Guid.NewGuid();
         var temporaryToken = "temporary-token";
-        var oldestHistory = new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-3" };
         var user = new ApplicationUser
         {
             Id = userId,
@@ -69,7 +68,7 @@ public class ResetForgotPasswordCommandHandlerTests
             {
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-1" },
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-2" },
-                oldestHistory
+                new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-3" }
             });
         _userManager.GeneratePasswordResetTokenAsync(user).Returns("identity-reset-token");
         _userManager.ResetPasswordAsync(user, "identity-reset-token", "NewPassword123!").Returns(IdentityResult.Success);
@@ -79,17 +78,13 @@ public class ResetForgotPasswordCommandHandlerTests
             CancellationToken.None);
 
         result.IsReset.Should().BeTrue();
-        await _passwordHistoryRepository.Received(1).AddAsync(
-            Arg.Is<PasswordHistory>(history =>
-                history.UserId == userId
-                && history.PasswordHash == "current-password-hash"),
+        await _passwordHistoryRepository.Received(1).AddPreviousPasswordAsync(
+            userId,
+            "current-password-hash",
+            3,
             Arg.Any<CancellationToken>());
-        _passwordHistoryRepository.Received(1).RemoveRange(Arg.Is<IEnumerable<PasswordHistory>>(histories =>
-            histories.Count() == 1
-            && histories.Single().Id == oldestHistory.Id));
         await _userManager.Received(1).GeneratePasswordResetTokenAsync(user);
         await _userManager.Received(1).ResetPasswordAsync(user, "identity-reset-token", "NewPassword123!");
-        await _passwordHistoryRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _passwordResetVerificationStore.Received(1).RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
     }
 
@@ -161,8 +156,11 @@ public class ResetForgotPasswordCommandHandlerTests
 
         await act.Should().ThrowAsync<PasswordReuseNotAllowedException>();
         await _userManager.DidNotReceive().GeneratePasswordResetTokenAsync(Arg.Any<ApplicationUser>());
-        await _passwordHistoryRepository.DidNotReceive().AddAsync(Arg.Any<PasswordHistory>(), Arg.Any<CancellationToken>());
-        await _passwordHistoryRepository.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _passwordHistoryRepository.DidNotReceive().AddPreviousPasswordAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
         await _passwordResetVerificationStore.DidNotReceive().RemoveAsync(temporaryToken, Arg.Any<CancellationToken>());
     }
 }

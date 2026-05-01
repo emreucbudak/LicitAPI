@@ -6,7 +6,7 @@ using Licit.AuthService.API.Services;
 using Licit.AuthService.Application.Behaviors;
 using Licit.AuthService.Application.Constants;
 using Licit.AuthService.Application.DTOs;
-using Licit.AuthService.Application.Features.CQRS.Auth.Login;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.Login;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Licit.AuthService.Infrastructure.Data;

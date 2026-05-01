@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.AuthService.Application.Features.CQRS.Auth.Login;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.Login;
 
 namespace Licit.AuthService.Application.Validators.Auth.Login;
 

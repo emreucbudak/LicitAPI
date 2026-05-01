@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.AuthService.Application.Features.CQRS.Auth.VerifyForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.VerifyForgotPassword;
 
 namespace Licit.AuthService.Application.Validators.Auth.VerifyForgotPassword;
 

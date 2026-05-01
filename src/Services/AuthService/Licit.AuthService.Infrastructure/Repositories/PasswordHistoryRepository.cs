@@ -17,12 +17,35 @@ public class PasswordHistoryRepository(AuthDbContext context) : IPasswordHistory
             .Take(take)
             .ToListAsync(cancellationToken);
 
-    public Task AddAsync(PasswordHistory passwordHistory, CancellationToken cancellationToken = default) =>
-        context.PasswordHistories.AddAsync(passwordHistory, cancellationToken).AsTask();
+    public async Task AddPreviousPasswordAsync(
+        Guid userId,
+        string? passwordHash,
+        int historyLimit,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(historyLimit, 1);
 
-    public void RemoveRange(IEnumerable<PasswordHistory> passwordHistories) =>
-        context.PasswordHistories.RemoveRange(passwordHistories);
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            return;
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        context.SaveChangesAsync(cancellationToken);
+        var historiesToRemove = await context.PasswordHistories
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.Id)
+            .Skip(historyLimit - 1)
+            .ToListAsync(cancellationToken);
+
+        await context.PasswordHistories.AddAsync(
+            new PasswordHistory
+            {
+                Id = Guid.CreateVersion7(),
+                UserId = userId,
+                PasswordHash = passwordHash
+            },
+            cancellationToken);
+
+        if (historiesToRemove.Count > 0)
+            context.PasswordHistories.RemoveRange(historiesToRemove);
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
 }

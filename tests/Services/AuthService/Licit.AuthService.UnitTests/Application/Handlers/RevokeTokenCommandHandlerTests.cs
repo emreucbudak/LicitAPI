@@ -1,8 +1,8 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken;
-using Licit.AuthService.Application.Features.CQRS.Auth.RevokeToken.Exceptions;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.RevokeToken;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.RevokeToken.Exceptions;
 using Licit.AuthService.Application.Interfaces;
 using NSubstitute;
 

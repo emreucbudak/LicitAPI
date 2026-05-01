@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.AuthService.Application.Features.CQRS.Auth.VerifyRegister;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.VerifyRegister;
 
 namespace Licit.AuthService.Application.Validators.Auth.VerifyRegister;
 

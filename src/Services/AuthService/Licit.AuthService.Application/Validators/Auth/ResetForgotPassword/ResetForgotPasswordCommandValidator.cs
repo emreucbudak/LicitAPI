@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.AuthService.Application.Features.CQRS.Auth.ResetForgotPassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ResetForgotPassword;
 
 namespace Licit.AuthService.Application.Validators.Auth.ResetForgotPassword;
 

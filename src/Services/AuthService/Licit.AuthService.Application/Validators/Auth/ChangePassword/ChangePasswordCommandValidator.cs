@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ChangePassword;
 
 namespace Licit.AuthService.Application.Validators.Auth.ChangePassword;
 

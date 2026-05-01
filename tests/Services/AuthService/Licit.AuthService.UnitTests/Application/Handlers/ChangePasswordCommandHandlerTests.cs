@@ -2,8 +2,8 @@ using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
 using Licit.AuthService.Application.Exceptions;
-using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword;
-using Licit.AuthService.Application.Features.CQRS.Auth.ChangePassword.Exceptions;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ChangePassword;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.ChangePassword.Exceptions;
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Licit.AuthService.UnitTests.Common;
@@ -34,10 +34,9 @@ public class ChangePasswordCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ValidRequest_ShouldChangePasswordAndRotateLastThreeHistoryEntries()
+    public async Task Handle_ValidRequest_ShouldChangePasswordAndStorePreviousPassword()
     {
         var userId = Guid.NewGuid();
-        var oldestHistory = new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-3" };
         var user = new ApplicationUser
         {
             Id = userId,
@@ -47,14 +46,13 @@ public class ChangePasswordCommandHandlerTests
 
         _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
-        _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "CurrentPassword123!")
-            .Returns(PasswordVerificationResult.Success);
+        _userManager.CheckPasswordAsync(user, "CurrentPassword123!").Returns(true);
         _passwordHistoryRepository.GetLatestByUserIdAsync(userId, 3, Arg.Any<CancellationToken>())
             .Returns(new[]
             {
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-1" },
                 new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-2" },
-                oldestHistory
+                new PasswordHistory { Id = Guid.NewGuid(), UserId = userId, PasswordHash = "history-hash-3" }
             });
         _userManager.ChangePasswordAsync(user, "CurrentPassword123!", "NewPassword123!").Returns(IdentityResult.Success);
 
@@ -63,15 +61,11 @@ public class ChangePasswordCommandHandlerTests
             CancellationToken.None);
 
         result.IsChanged.Should().BeTrue();
-        await _passwordHistoryRepository.Received(1).AddAsync(
-            Arg.Is<PasswordHistory>(history =>
-                history.UserId == userId
-                && history.PasswordHash == "current-password-hash"),
+        await _passwordHistoryRepository.Received(1).AddPreviousPasswordAsync(
+            userId,
+            "current-password-hash",
+            3,
             Arg.Any<CancellationToken>());
-        _passwordHistoryRepository.Received(1).RemoveRange(Arg.Is<IEnumerable<PasswordHistory>>(histories =>
-            histories.Count() == 1
-            && histories.Single().Id == oldestHistory.Id));
-        await _passwordHistoryRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _userManager.Received(1).ChangePasswordAsync(user, "CurrentPassword123!", "NewPassword123!");
     }
 
@@ -88,8 +82,7 @@ public class ChangePasswordCommandHandlerTests
 
         _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
-        _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "WrongPassword123!")
-            .Returns(PasswordVerificationResult.Failed);
+        _userManager.CheckPasswordAsync(user, "WrongPassword123!").Returns(false);
 
         var act = () => _handler.Handle(
             new ChangePasswordCommandRequest("WrongPassword123!", "NewPassword123!"),
@@ -97,8 +90,11 @@ public class ChangePasswordCommandHandlerTests
 
         await act.Should().ThrowAsync<CurrentPasswordInvalidException>();
         await _userManager.DidNotReceive().ChangePasswordAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>(), Arg.Any<string>());
-        await _passwordHistoryRepository.DidNotReceive().AddAsync(Arg.Any<PasswordHistory>(), Arg.Any<CancellationToken>());
-        await _passwordHistoryRepository.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _passwordHistoryRepository.DidNotReceive().AddPreviousPasswordAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -114,8 +110,7 @@ public class ChangePasswordCommandHandlerTests
 
         _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
-        _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "CurrentPassword123!")
-            .Returns(PasswordVerificationResult.Success);
+        _userManager.CheckPasswordAsync(user, "CurrentPassword123!").Returns(true);
         _passwordHistoryRepository.GetLatestByUserIdAsync(userId, 3, Arg.Any<CancellationToken>())
             .Returns(new[]
             {
@@ -131,7 +126,11 @@ public class ChangePasswordCommandHandlerTests
 
         await act.Should().ThrowAsync<PasswordReuseNotAllowedException>();
         await _userManager.DidNotReceive().ChangePasswordAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>(), Arg.Any<string>());
-        await _passwordHistoryRepository.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _passwordHistoryRepository.DidNotReceive().AddPreviousPasswordAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -147,8 +146,7 @@ public class ChangePasswordCommandHandlerTests
 
         _currentUserService.UserId.Returns(userId);
         _userManager.FindByIdAsync(userId.ToString()).Returns(user);
-        _passwordHasher.VerifyHashedPassword(user, "current-password-hash", "CurrentPassword123!")
-            .Returns(PasswordVerificationResult.Success);
+        _userManager.CheckPasswordAsync(user, "CurrentPassword123!").Returns(true);
         _passwordHistoryRepository.GetLatestByUserIdAsync(userId, 3, Arg.Any<CancellationToken>())
             .Returns(Array.Empty<PasswordHistory>());
         _userManager.ChangePasswordAsync(user, "CurrentPassword123!", "NewPassword123!")
@@ -160,6 +158,10 @@ public class ChangePasswordCommandHandlerTests
 
         await act.Should().ThrowAsync<BusinessRuleException>()
             .WithMessage("*Password validation failed*");
-        await _passwordHistoryRepository.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _passwordHistoryRepository.DidNotReceive().AddPreviousPasswordAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string?>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
     }
 }

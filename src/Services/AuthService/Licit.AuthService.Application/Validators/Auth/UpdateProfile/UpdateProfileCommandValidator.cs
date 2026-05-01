@@ -1,5 +1,5 @@
 using FluentValidation;
-using Licit.AuthService.Application.Features.CQRS.Auth.UpdateProfile;
+using Licit.AuthService.Application.Features.CQRS.Auth.Commands.UpdateProfile;
 
 namespace Licit.AuthService.Application.Validators.Auth.UpdateProfile;
 
