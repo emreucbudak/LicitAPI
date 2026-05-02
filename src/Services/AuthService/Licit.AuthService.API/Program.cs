@@ -80,7 +80,6 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
 
 // Services
 builder.Services.AddHttpContextAccessor();
