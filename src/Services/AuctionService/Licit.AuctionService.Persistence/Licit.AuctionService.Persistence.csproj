@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\Licit.AuctionService.Application\Licit.AuctionService.Application.csproj" />
     <ProjectReference Include="..\Licit.AuctionService.Domain\Licit.AuctionService.Domain.csproj" />
   </ItemGroup>
 

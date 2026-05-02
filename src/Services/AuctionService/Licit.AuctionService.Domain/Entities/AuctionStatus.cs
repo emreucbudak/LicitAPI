@@ -1,8 +1,10 @@
 ﻿namespace Licit.AuctionService.Domain.Entities
 {
-    public class AuctionStatus
+    public enum AuctionStatus
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        Aktif = 1,
+        Tamamlandı = 2,
+        İptal = 3,
+        Başlayacak = 4,
     }
 }

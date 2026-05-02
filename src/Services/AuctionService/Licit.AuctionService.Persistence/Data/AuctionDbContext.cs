@@ -12,11 +12,5 @@ namespace Licit.AuctionService.Persistence.Data
         {
         }
         public DbSet<Domain.Entities.Auction> Auctions { get; set; } 
-        public DbSet<Domain.Entities.AuctionStatus> AuctionStatuses { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-        }
     }
 }

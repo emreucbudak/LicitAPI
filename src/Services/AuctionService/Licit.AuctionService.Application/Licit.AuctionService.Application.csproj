@@ -4,6 +4,12 @@
     <ProjectReference Include="..\Licit.AuctionService.Domain\Licit.AuctionService.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+    <Folder Include="Feature\CQRS\Auction\Command\" />
+    <Folder Include="Interface\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
