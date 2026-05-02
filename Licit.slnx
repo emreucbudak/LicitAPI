@@ -16,6 +16,18 @@
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Domain/Licit.TenderingService.Domain.csproj" />
     <Project Path="src/Services/TenderingService/Licit.TenderingService.Infrastructure/Licit.TenderingService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Services/AuctionService/">
+    <Project Path="src/Services/AuctionService/Licit.AuctionService.API/Licit.AuctionService.API.csproj" />
+    <Project Path="src/Services/AuctionService/Licit.AuctionService.Application/Licit.AuctionService.Application.csproj" />
+    <Project Path="src/Services/AuctionService/Licit.AuctionService.Domain/Licit.AuctionService.Domain.csproj" />
+    <Project Path="src/Services/AuctionService/Licit.AuctionService.Infrastructure/Licit.AuctionService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/BiddingService/">
+    <Project Path="src/Services/BiddingService/Licit.BiddingService.API/Licit.BiddingService.API.csproj" />
+    <Project Path="src/Services/BiddingService/Licit.BiddingService.Application/Licit.BiddingService.Application.csproj" />
+    <Project Path="src/Services/BiddingService/Licit.BiddingService.Domain/Licit.BiddingService.Domain.csproj" />
+    <Project Path="src/Services/BiddingService/Licit.BiddingService.Infrastructure/Licit.BiddingService.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Services/WalletService/">
     <Project Path="src/Services/WalletService/Licit.WalletService.API/Licit.WalletService.API.csproj" />
     <Project Path="src/Services/WalletService/Licit.WalletService.Application/Licit.WalletService.Application.csproj" />

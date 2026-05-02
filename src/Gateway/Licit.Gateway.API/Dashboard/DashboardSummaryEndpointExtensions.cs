@@ -9,7 +9,6 @@ public static class DashboardSummaryEndpointExtensions
     private const string AuthClusterId = "auth-cluster";
     private const string WalletClusterId = "wallet-cluster";
     private const string TenderingClusterId = "tendering-cluster";
-    private const string BiddingClusterId = "bidding-cluster";
 
     private static readonly JsonElement EmptyObject = JsonDocument.Parse("{}").RootElement.Clone();
 
@@ -51,24 +50,21 @@ public static class DashboardSummaryEndpointExtensions
         }
 
         var profile = authResult.Payload;
-        var userId = TryGetUserId(profile);
 
         var balanceTask = GetJsonAsync(httpClient, configuration, WalletClusterId, "/api/wallet/balance", authorization.ToString(), cancellationToken);
         var transactionsTask = GetJsonAsync(httpClient, configuration, WalletClusterId, "/api/wallet/transactions?page=1&pageSize=20", authorization.ToString(), cancellationToken);
         var listingsTask = GetJsonAsync(httpClient, configuration, TenderingClusterId, "/api/tender?page=1&pageSize=20", authorization.ToString(), cancellationToken);
-        var auctionsTask = GetJsonAsync(httpClient, configuration, BiddingClusterId, "/api/v1/auctions", authorization.ToString(), cancellationToken);
-        var bidsTask = GetJsonAsync(httpClient, configuration, BiddingClusterId, "/api/v1/bids/me?page=1&pageSize=20", authorization.ToString(), cancellationToken, userId);
+        var activeListingsTask = GetJsonAsync(httpClient, configuration, TenderingClusterId, "/api/tender?page=1&pageSize=20&activeOnly=true", authorization.ToString(), cancellationToken);
 
-        await Task.WhenAll(balanceTask, transactionsTask, listingsTask, auctionsTask, bidsTask);
+        await Task.WhenAll(balanceTask, transactionsTask, listingsTask, activeListingsTask);
 
         var balance = GetPayloadOrRecordError("walletBalance", balanceTask.Result, errors, EmptyObject);
         var transactions = GetPayloadOrRecordError("walletTransactions", transactionsTask.Result, errors, EmptyObject);
         var listings = GetPayloadOrRecordError("listings", listingsTask.Result, errors, EmptyObject);
-        var auctionsPayload = GetPayloadOrRecordError("activeAuctions", auctionsTask.Result, errors, EmptyObject);
-        var bidsPayload = GetPayloadOrRecordError("recentBids", bidsTask.Result, errors, EmptyObject);
+        var activeListingsPayload = GetPayloadOrRecordError("activeAuctions", activeListingsTask.Result, errors, EmptyObject);
 
-        var activeAuctions = ExtractItems(auctionsPayload, "auctions");
-        var recentBids = ExtractItems(bidsPayload, "bids");
+        var activeAuctions = ExtractItems(activeListingsPayload, "tenders");
+        var recentBids = Array.Empty<JsonElement>();
 
         var response = new DashboardSummaryResponse(
             profile,
@@ -81,7 +77,7 @@ public static class DashboardSummaryEndpointExtensions
                 GetTotalCount(listings),
                 activeAuctions.Count,
                 GetTotalCount(transactions),
-                recentBids.Count),
+                0),
             errors.Count > 0 ? errors : null);
 
         return Results.Ok(response);
@@ -156,48 +152,6 @@ public static class DashboardSummaryEndpointExtensions
             .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
         return Uri.TryCreate(address, UriKind.Absolute, out var uri) ? uri : null;
-    }
-
-    private static string? TryGetUserId(JsonElement profile)
-    {
-        foreach (var propertyName in new[] { "id", "userId", "userID", "user_id", "sub" })
-        {
-            if (TryGetStringProperty(profile, propertyName, out var value))
-            {
-                return value;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool TryGetStringProperty(JsonElement element, string propertyName, out string? value)
-    {
-        value = null;
-
-        if (element.ValueKind != JsonValueKind.Object)
-        {
-            return false;
-        }
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (!property.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            value = property.Value.ValueKind switch
-            {
-                JsonValueKind.String => property.Value.GetString(),
-                JsonValueKind.Number => property.Value.GetRawText(),
-                _ => null
-            };
-
-            return !string.IsNullOrWhiteSpace(value);
-        }
-
-        return false;
     }
 
     private static IReadOnlyList<JsonElement> ExtractItems(JsonElement payload, string namedArray)

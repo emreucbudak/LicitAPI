@@ -12,8 +12,6 @@ services:
       - ReverseProxy__Clusters__wallet-cluster__Destinations__wallet-service__Address=http://wallet-service:8080/
       - ReverseProxy__Clusters__mail-cluster__Destinations__mail-service__Address=http://mail-service:8080/
       - ReverseProxy__Clusters__notification-cluster__Destinations__notification-service__Address=http://notification-service:8080/
-      - ReverseProxy__Clusters__bidding-cluster__Destinations__bidding-service__Address=http://host.docker.internal:5160/
-      - ReverseProxy__Clusters__streamer-cluster__Destinations__streamer-service__Address=http://host.docker.internal:5161/
       - ReverseProxy__Clusters__frontend-cluster__Destinations__frontend-dev-server__Address=http://host.docker.internal:5173/
       - RateLimiting__Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
     ports:
