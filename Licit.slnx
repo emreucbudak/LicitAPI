@@ -21,6 +21,7 @@
     <Project Path="src/Services/AuctionService/Licit.AuctionService.Application/Licit.AuctionService.Application.csproj" />
     <Project Path="src/Services/AuctionService/Licit.AuctionService.Domain/Licit.AuctionService.Domain.csproj" />
     <Project Path="src/Services/AuctionService/Licit.AuctionService.Infrastructure/Licit.AuctionService.Infrastructure.csproj" />
+    <Project Path="src/Services/AuctionService/Licit.AuctionService.Persistence/Licit.AuctionService.Persistence.csproj" />
   </Folder>
   <Folder Name="/src/Services/BiddingService/">
     <Project Path="src/Services/BiddingService/Licit.BiddingService.API/Licit.BiddingService.API.csproj" />
