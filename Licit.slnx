@@ -56,6 +56,9 @@
   <Folder Name="/tests/Services/TenderingService/">
     <Project Path="tests/Services/TenderingService/Licit.TenderingService.UnitTests/Licit.TenderingService.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tests/Services/AuctionService/">
+    <Project Path="Licit.AuctionService.UnitTests/Licit.AuctionService.UnitTests.csproj" Id="90cbdf79-3ffd-4a3e-8982-be2220b75c91" />
+  </Folder>
   <Folder Name="/tests/Services/AuthService/">
     <Project Path="tests/Services/AuthService/Licit.AuthService.UnitTests/Licit.AuthService.UnitTests.csproj" />
   </Folder>

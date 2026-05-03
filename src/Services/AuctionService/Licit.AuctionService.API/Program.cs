@@ -1,12 +1,14 @@
+using FlashMediator;
 using FluentValidation;
+using Licit.AuctionService.API.ExceptionHandlers;
 using Licit.AuctionService.Application.Interface;
 using Licit.AuctionService.Application.Repository;
 using Licit.AuctionService.Application.Validators;
 using Licit.AuctionService.Persistence.Data;
 using Licit.AuctionService.Persistence.Repository;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+using Serilog;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,14 @@ builder.Services.AddDbContext<AuctionDbContext>(options =>
 });
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddValidatorsFromAssemblyContaining<AuctionValidator>();
+builder.Services.AddFlashMediator(typeof(Program).Assembly);
+builder.Services.AddSerilog(opt =>
+{
+    opt
+    .WriteTo
+    .Console();
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -29,7 +39,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
