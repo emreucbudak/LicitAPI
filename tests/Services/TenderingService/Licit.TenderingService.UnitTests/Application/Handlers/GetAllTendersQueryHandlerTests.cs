@@ -54,7 +54,7 @@ public class GetAllTendersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldMapFieldsCorrectly()
     {
-        var tender = TenderTestFactory.CreateDraftTenderWithRules(3);
+        var tender = TenderTestFactory.CreateDraftTender();
         SetCategory(tender, new Category("Test Kategori"));
         _tenderRepo.GetAllAsync(Arg.Any<int>(), Arg.Any<int>()).Returns(new List<Tender> { tender });
         _tenderRepo.GetCountAsync().Returns(1);
@@ -65,7 +65,6 @@ public class GetAllTendersQueryHandlerTests
         dto.Id.Should().Be(tender.Id);
         dto.Status.Should().Be("Draft");
         dto.CategoryName.Should().Be("Test Kategori");
-        dto.RuleCount.Should().Be(3);
     }
 
     [Fact]

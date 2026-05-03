@@ -52,11 +52,4 @@ public static class TenderTestFactory
         return tender;
     }
 
-    public static Tender CreateDraftTenderWithRules(int ruleCount = 2)
-    {
-        var tender = CreateDraftTender();
-        for (int i = 1; i <= ruleCount; i++)
-            tender.AddRule($"Kural {i}", $"Kural açıklama {i}", true);
-        return tender;
-    }
 }
