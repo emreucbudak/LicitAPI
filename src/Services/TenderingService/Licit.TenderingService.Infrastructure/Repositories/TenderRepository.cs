@@ -13,14 +13,12 @@ public class TenderRepository : ITenderRepository
 
     public async Task<Tender?> GetByIdAsync(Guid id) =>
         await _context.Tenders
-            .Include(t => t.Rules)
             .Include(t => t.Category)
             .FirstOrDefaultAsync(t => t.Id == id);
 
     public async Task<IEnumerable<Tender>> GetAllAsync(int page, int pageSize) =>
         await _context.Tenders
             .AsNoTracking()
-            .Include(t => t.Rules)
             .Include(t => t.Category)
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -35,7 +33,6 @@ public class TenderRepository : ITenderRepository
         var categoryIds = await GetCategoryFilterIdsAsync(categoryId);
 
         return await ApplySearchFilters(_context.Tenders.AsNoTracking(), search, activeOnly, categoryIds)
-            .Include(t => t.Rules)
             .Include(t => t.Category)
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -54,7 +51,6 @@ public class TenderRepository : ITenderRepository
     public async Task<IEnumerable<Tender>> GetByUserIdAsync(Guid userId) =>
         await _context.Tenders
             .AsNoTracking()
-            .Include(t => t.Rules)
             .Include(t => t.Category)
             .Where(t => t.CreatedByUserId == userId)
             .OrderByDescending(t => t.CreatedAt)

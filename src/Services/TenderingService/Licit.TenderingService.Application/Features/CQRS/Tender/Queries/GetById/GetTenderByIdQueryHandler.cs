@@ -31,8 +31,7 @@ public class GetTenderByIdQueryHandler(
             tender.Category.Name,
             tender.ImageUrl,
             tender.CreatedAt,
-            tender.UpdatedAt,
-            tender.Rules.Select(r => new TenderRuleDto(r.Id, r.Title, r.Description, r.IsRequired)).ToList()
+            tender.UpdatedAt
         );
     }
 }

@@ -1,5 +1,4 @@
 using FlashMediator;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Update;
 
@@ -10,6 +9,5 @@ public record UpdateTenderCommandRequest(
     decimal StartingPrice,
     DateTime StartDate,
     DateTime EndDate,
-    Guid CategoryId,
-    List<CreateTenderRuleDto>? Rules
+    Guid CategoryId
 ) : IRequest<UpdateTenderCommandResponse>;

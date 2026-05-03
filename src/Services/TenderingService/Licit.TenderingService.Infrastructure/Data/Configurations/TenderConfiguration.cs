@@ -31,11 +31,6 @@ public class TenderConfiguration : IEntityTypeConfiguration<Tender>
         builder.Property(t => t.ImageBlobName)
             .HasMaxLength(512);
 
-        builder.HasMany(t => t.Rules)
-            .WithOne(r => r.Tender)
-            .HasForeignKey(r => r.TenderId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasIndex(t => t.Status);
         builder.HasIndex(t => new { t.Status, t.EndDate, t.StartDate });
         builder.HasIndex(t => t.CreatedAt)

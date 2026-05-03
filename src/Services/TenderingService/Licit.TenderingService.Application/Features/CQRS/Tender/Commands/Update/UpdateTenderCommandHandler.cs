@@ -31,13 +31,6 @@ public class UpdateTenderCommandHandler(
 
         tender.UpdateDetails(request.Title, request.Description, request.StartingPrice, request.StartDate, request.EndDate, request.CategoryId);
 
-        if (request.Rules is not null)
-        {
-            tender.ClearRules();
-            foreach (var rule in request.Rules)
-                tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
-        }
-
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
 

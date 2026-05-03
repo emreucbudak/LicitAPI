@@ -13,13 +13,5 @@ public record GetTenderByIdQueryResponse(
     string CategoryName,
     string? ImageUrl,
     DateTime CreatedAt,
-    DateTime? UpdatedAt,
-    List<TenderRuleDto> Rules
-);
-
-public record TenderRuleDto(
-    Guid Id,
-    string Title,
-    string Description,
-    bool IsRequired
+    DateTime? UpdatedAt
 );

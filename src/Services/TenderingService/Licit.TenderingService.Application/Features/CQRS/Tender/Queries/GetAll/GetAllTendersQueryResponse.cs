@@ -22,6 +22,5 @@ public record TenderSummaryDto(
     Guid CategoryId,
     string CategoryName,
     string? ImageUrl,
-    DateTime CreatedAt,
-    int RuleCount
+    DateTime CreatedAt
 );

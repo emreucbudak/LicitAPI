@@ -35,8 +35,7 @@ public class GetAllTendersQueryHandler(
             t.CategoryId,
             t.Category.Name,
             t.ImageUrl,
-            t.CreatedAt,
-            t.Rules.Count
+            t.CreatedAt
         )).ToList();
 
         var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);

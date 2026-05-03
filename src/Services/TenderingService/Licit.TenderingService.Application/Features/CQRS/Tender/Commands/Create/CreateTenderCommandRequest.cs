@@ -8,12 +8,5 @@ public record CreateTenderCommandRequest(
     decimal StartingPrice,
     DateTime StartDate,
     DateTime EndDate,
-    Guid CategoryId,
-    List<CreateTenderRuleDto>? Rules
+    Guid CategoryId
 ) : IRequest<CreateTenderCommandResponse>;
-
-public record CreateTenderRuleDto(
-    string Title,
-    string Description,
-    bool IsRequired
-);

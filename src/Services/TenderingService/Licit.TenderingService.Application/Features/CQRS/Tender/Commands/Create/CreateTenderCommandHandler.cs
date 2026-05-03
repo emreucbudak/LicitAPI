@@ -30,13 +30,6 @@ public class CreateTenderCommandHandler(
             userId,
             request.CategoryId
         );
-
-        if (request.Rules is { Count: > 0 })
-        {
-            foreach (var rule in request.Rules)
-                tender.AddRule(rule.Title, rule.Description, rule.IsRequired);
-        }
-
         tenderRepository.Add(tender);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
