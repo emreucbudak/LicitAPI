@@ -17,7 +17,7 @@ public class Tender : BaseEntity
     public string? ImageBlobName { get; private set; }
 
     public Category Category { get; private set; } = null!;
-    public ICollection<TenderRule> Rules { get; private set; } = new List<TenderRule>();
+    public string[] Rule {  get; private set; }
 
     private Tender() { }
 
@@ -58,23 +58,6 @@ public class Tender : BaseEntity
         ImageBlobName = imageBlobName;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    public void AddRule(string title, string description, bool isRequired)
-    {
-        Rules.Add(new TenderRule
-        {
-            TenderId = Id,
-            Title = title,
-            Description = description,
-            IsRequired = isRequired
-        });
-    }
-
-    public void ClearRules()
-    {
-        Rules.Clear();
-    }
-
     public void ChangeStatus(TenderStatus newStatus)
     {
         var allowed = Status switch

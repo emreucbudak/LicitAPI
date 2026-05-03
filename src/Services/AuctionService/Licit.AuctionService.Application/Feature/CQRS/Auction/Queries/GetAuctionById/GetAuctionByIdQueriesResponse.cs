@@ -1,6 +1,8 @@
-﻿namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Queries.GetActiveAuctions
+﻿using Licit.AuctionService.Domain.Entities;
+
+namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Queries.GetAuctionById
 {
-    public record GetActiveAuctionsQueriesResponse
+    public record GetAuctionByIdQueriesResponse
     {
         public string AuctionName { get; init; }
         public int StartPrice { get; init; }
@@ -9,8 +11,9 @@
         public DateOnly EndDate { get; init; }
         public string[] Rules { get; init; }
         public string Description { get; init; }
+        public Guid? WinnerBidId { get; init; }
+        public AuctionStatus Status { get; init; }
         public Guid CreatedByUserId { get; init; }
         public string[] ImgUrls { get; init; }
-
     }
 }

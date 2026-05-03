@@ -1,3 +1,4 @@
+using Licit.AuctionService.Application.Interface;
 using Licit.AuctionService.Application.Repository;
 using Licit.AuctionService.Persistence.Data;
 using Licit.AuctionService.Persistence.Repository;
@@ -11,6 +12,7 @@ builder.Services.AddDbContext<AuctionDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
