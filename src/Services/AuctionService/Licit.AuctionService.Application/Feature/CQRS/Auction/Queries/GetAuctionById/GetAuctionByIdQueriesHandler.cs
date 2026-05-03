@@ -1,6 +1,5 @@
 ﻿using FlashMediator;
 using Licit.AuctionService.Application.Repository;
-using Licit.AuctionService.Domain.Entities;
 
 namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Queries.GetAuctionById
 {

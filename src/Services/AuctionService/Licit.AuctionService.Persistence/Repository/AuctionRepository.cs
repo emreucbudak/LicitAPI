@@ -23,7 +23,7 @@ namespace Licit.AuctionService.Persistence.Repository
         {
             return await _dbSet.FirstOrDefaultAsync(a => a.Id == auctionId);
         }
-        public async Task UpdateAuctionAsync(Auction auction)
+        public void UpdateAuctionAsync(Auction auction)
         {
             _dbSet.Update(auction);
         }

@@ -14,7 +14,7 @@ namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Command.UpdateAu
               throw new Exception("Auction not found");
             }
             auction.Status = (Domain.Entities.AuctionStatus)request.Status;
-            await repo.UpdateAuctionAsync(auction);
+             repo.UpdateAuctionAsync(auction);
             await unit.SaveChangesAsync();
         }
     }
