@@ -24,7 +24,7 @@
     <Project Path="src/Services/AuctionService/Licit.AuctionService.Persistence/Licit.AuctionService.Persistence.csproj" Id="0ebffd52-80e1-4e01-9c7a-bcf84e12e345" />
   </Folder>
   <Folder Name="/src/Services/BiddingService/">
-    <Project Path="src/Services/BiddingService/Licit.BiddingService.API/Licit.BiddingService.API.csproj" />
+    <Project Path="src/Services/BiddingService/Licit.BiddingService.API/Licit.BiddingService.API.csproj" Id="52e6654d-3a16-4f83-9107-55302ab3eafc" />
     <Project Path="src/Services/BiddingService/Licit.BiddingService.Application/Licit.BiddingService.Application.csproj" />
     <Project Path="src/Services/BiddingService/Licit.BiddingService.Domain/Licit.BiddingService.Domain.csproj" />
     <Project Path="src/Services/BiddingService/Licit.BiddingService.Infrastructure/Licit.BiddingService.Infrastructure.csproj" />
