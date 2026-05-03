@@ -9,6 +9,11 @@ namespace Licit.AuctionService.Persistence.Repository
     {
         private  DbSet<Auction> _dbSet => dbContext.Set<Auction>();
 
+        public async Task CreateAuctionAsync(Auction auction)
+        {
+            await _dbSet.AddAsync(auction);
+        }
+
         public async Task<IEnumerable<Auction>> GetActiveAuctions()
         {
             return await _dbSet.Where(a => a.Status == AuctionStatus.Aktif).ToListAsync();
