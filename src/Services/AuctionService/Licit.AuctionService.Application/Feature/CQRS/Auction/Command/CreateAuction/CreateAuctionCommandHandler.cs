@@ -8,20 +8,7 @@ namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Command.CreateAu
     {
         public async  Task Handle(CreateAuctionCommandRequest request, CancellationToken cancellationToken)
         {
-            var auction = new Domain.Entities.Auction()
-            {
-                Description = request.Description,
-                EndDate = request.EndDate,
-                StartDate = request.StartDate,
-                AuctionName = request.AuctionName,
-                CreatedByUserId = request.CreatedByUserId,
-                ImgUrls = request.ImgUrls,
-                IncreaseAmount = request.IncreaseAmount,
-                StartPrice = request.StartPrice,
-                Status = request.Status,
-                Rules = request.Rules,
-
-            };
+            var auction = new Domain.Entities.Auction(request.AuctionName, request.StartPrice, request.IncreaseAmount, request.StartDate, request.EndDate, request.Rules, request.Description, request.Status, request.CreatedByUserId, request.ImgUrls);
             await repo.CreateAuctionAsync(auction);
             await unit.SaveChangesAsync();
 
