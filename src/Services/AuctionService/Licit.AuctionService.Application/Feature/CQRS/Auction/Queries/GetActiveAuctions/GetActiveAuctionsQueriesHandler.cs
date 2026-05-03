@@ -8,7 +8,8 @@ namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Queries.GetActiv
         public async Task<IEnumerable<GetActiveAuctionsQueriesResponse>> Handle(GetActiveAuctionsQueriesRequest request, CancellationToken cancellationToken)
         {
             var activeAuctions = await repository.GetActiveAuctions();
-            return activeAuctions.Select(auction => new GetActiveAuctionsQueriesResponse
+            var auctions = activeAuctions.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
+            return auctions.Select(auction => new GetActiveAuctionsQueriesResponse
             {
                 AuctionName = auction.AuctionName,
                 StartPrice = auction.StartPrice,
