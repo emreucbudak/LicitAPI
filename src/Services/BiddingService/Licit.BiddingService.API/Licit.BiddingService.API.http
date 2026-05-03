@@ -1,0 +1,6 @@
+@Licit.BiddingService.API_HostAddress = http://localhost:5106
+
+GET {{Licit.BiddingService.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
