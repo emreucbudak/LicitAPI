@@ -1,7 +1,6 @@
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Update;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
@@ -36,8 +35,7 @@ public class UpdateTenderCommandHandlerTests
         StartingPrice: 2000m,
         StartDate: DateTime.UtcNow.AddDays(5),
         EndDate: DateTime.UtcNow.AddDays(60),
-        CategoryId: Guid.NewGuid(),
-        Rules: null
+        CategoryId: Guid.NewGuid()
     );
 
     [Fact]
@@ -55,26 +53,6 @@ public class UpdateTenderCommandHandlerTests
         result.Description.Should().Be(request.Description);
         result.StartingPrice.Should().Be(request.StartingPrice);
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WithRules_ShouldClearAndAddNewRules()
-    {
-        var tender = TenderTestFactory.CreateDraftTenderWithRules(2);
-        var request = CreateValidRequest(tender.Id) with
-        {
-            Rules = new List<CreateTenderRuleDto>
-            {
-                new("Yeni Kural", "Yeni Aciklama", true)
-            }
-        };
-        _currentUserService.UserId.Returns(tender.CreatedByUserId);
-        _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
-
-        await _handler.Handle(request, CancellationToken.None);
-
-        tender.Rules.Should().HaveCount(1);
-        tender.Rules.First().Title.Should().Be("Yeni Kural");
     }
 
     [Fact]

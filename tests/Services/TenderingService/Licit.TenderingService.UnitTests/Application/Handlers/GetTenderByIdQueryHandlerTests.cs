@@ -26,7 +26,7 @@ public class GetTenderByIdQueryHandlerTests
     [Fact]
     public async Task Handle_TenderExists_ShouldReturnDetailedResponse()
     {
-        var tender = TenderTestFactory.CreateDraftTenderWithRules(2);
+        var tender = TenderTestFactory.CreateDraftTender();
         SetCategory(tender, new Category("Test Kategori"));
         _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
 
@@ -37,7 +37,6 @@ public class GetTenderByIdQueryHandlerTests
         result.Title.Should().Be(tender.Title);
         result.Status.Should().Be("Draft");
         result.CategoryName.Should().Be("Test Kategori");
-        result.Rules.Should().HaveCount(2);
     }
 
     [Fact]
@@ -49,24 +48,6 @@ public class GetTenderByIdQueryHandlerTests
         var act = () => _handler.Handle(new GetTenderByIdQueryRequest(id), CancellationToken.None);
 
         await act.Should().ThrowAsync<TenderNotFoundException>();
-    }
-
-    [Fact]
-    public async Task Handle_ShouldMapRulesCorrectly()
-    {
-        var tender = TenderTestFactory.CreateDraftTender();
-        tender.AddRule("Kural 1", "Açıklama 1", true);
-        tender.AddRule("Kural 2", "Açıklama 2", false);
-        SetCategory(tender, new Category("Kat"));
-        _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
-
-        var result = await _handler.Handle(new GetTenderByIdQueryRequest(tender.Id), CancellationToken.None);
-
-        result.Rules.Should().HaveCount(2);
-        result.Rules[0].Title.Should().Be("Kural 1");
-        result.Rules[0].IsRequired.Should().BeTrue();
-        result.Rules[1].Title.Should().Be("Kural 2");
-        result.Rules[1].IsRequired.Should().BeFalse();
     }
 
     [Fact]

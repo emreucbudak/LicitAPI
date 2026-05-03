@@ -1,6 +1,5 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Create;
 using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.Update;
 using Licit.TenderingService.Application.Validators.Tender.Commands.Update;
 
@@ -17,8 +16,7 @@ public class UpdateTenderCommandValidatorTests
         StartingPrice: 1000m,
         StartDate: DateTime.UtcNow.AddDays(1),
         EndDate: DateTime.UtcNow.AddDays(30),
-        CategoryId: Guid.NewGuid(),
-        Rules: null
+        CategoryId: Guid.NewGuid()
     );
 
     [Fact]

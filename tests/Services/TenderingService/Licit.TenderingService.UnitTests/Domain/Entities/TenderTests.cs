@@ -39,13 +39,6 @@ public class TenderTests
     }
 
     [Fact]
-    public void Constructor_ShouldInitializeEmptyRulesCollection()
-    {
-        var tender = TenderTestFactory.CreateDraftTender();
-        tender.Rules.Should().NotBeNull().And.BeEmpty();
-    }
-
-    [Fact]
     public void Constructor_ShouldGenerateId()
     {
         var tender = TenderTestFactory.CreateDraftTender();
@@ -124,44 +117,6 @@ public class TenderTests
         var act = () => tender.UpdateDetails("x", "y", 1, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), Guid.NewGuid());
 
         act.Should().Throw<TenderNotEditableException>();
-    }
-
-    #endregion
-
-    #region AddRule / ClearRules
-
-    [Fact]
-    public void AddRule_ShouldAddRuleToCollection()
-    {
-        var tender = TenderTestFactory.CreateDraftTender();
-
-        tender.AddRule("Kural 1", "Açıklama 1", true);
-
-        tender.Rules.Should().HaveCount(1);
-        tender.Rules.First().Title.Should().Be("Kural 1");
-        tender.Rules.First().Description.Should().Be("Açıklama 1");
-        tender.Rules.First().IsRequired.Should().BeTrue();
-    }
-
-    [Fact]
-    public void AddRule_MultipleTimes_ShouldAddAllRules()
-    {
-        var tender = TenderTestFactory.CreateDraftTender();
-
-        tender.AddRule("Kural 1", "Açıklama 1", true);
-        tender.AddRule("Kural 2", "Açıklama 2", false);
-
-        tender.Rules.Should().HaveCount(2);
-    }
-
-    [Fact]
-    public void ClearRules_ShouldRemoveAllRules()
-    {
-        var tender = TenderTestFactory.CreateDraftTenderWithRules(3);
-
-        tender.ClearRules();
-
-        tender.Rules.Should().BeEmpty();
     }
 
     #endregion

@@ -15,8 +15,7 @@ public class CreateTenderCommandValidatorTests
         StartingPrice: 1000m,
         StartDate: DateTime.UtcNow.AddDays(1),
         EndDate: DateTime.UtcNow.AddDays(30),
-        CategoryId: Guid.NewGuid(),
-        Rules: null
+        CategoryId: Guid.NewGuid()
     );
 
     [Fact]

@@ -31,8 +31,7 @@ public class CreateTenderCommandHandlerTests
         StartingPrice: 1000m,
         StartDate: DateTime.UtcNow.AddDays(1),
         EndDate: DateTime.UtcNow.AddDays(30),
-        CategoryId: Guid.NewGuid(),
-        Rules: null
+        CategoryId: Guid.NewGuid()
     );
 
     [Fact]
@@ -49,35 +48,6 @@ public class CreateTenderCommandHandlerTests
         result.Status.Should().Be("Draft");
         _tenderRepo.Received(1).Add(Arg.Any<Tender>());
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Handle_WithRules_ShouldAddRulesToTender()
-    {
-        var request = CreateValidRequest() with
-        {
-            Rules = new List<CreateTenderRuleDto>
-            {
-                new("Kural 1", "Aciklama 1", true),
-                new("Kural 2", "Aciklama 2", false)
-            }
-        };
-
-        var result = await _handler.Handle(request, CancellationToken.None);
-
-        result.Should().NotBeNull();
-        _tenderRepo.Received(1).Add(Arg.Is<Tender>(t => t.Rules.Count == 2));
-    }
-
-    [Fact]
-    public async Task Handle_WithEmptyRules_ShouldNotAddRules()
-    {
-        var request = CreateValidRequest() with { Rules = new List<CreateTenderRuleDto>() };
-
-        var result = await _handler.Handle(request, CancellationToken.None);
-
-        result.Should().NotBeNull();
-        _tenderRepo.Received(1).Add(Arg.Is<Tender>(t => t.Rules.Count == 0));
     }
 
     [Fact]
