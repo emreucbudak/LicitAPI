@@ -13,7 +13,7 @@ namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Command.UpdateAu
             {
               throw new Exception("Auction not found");
             }
-            auction.Status = (Domain.Entities.AuctionStatus)request.Status;
+            auction.SetStatus((Domain.Entities.AuctionStatus)request.Status);
              repo.UpdateAuctionAsync(auction);
             await unit.SaveChangesAsync();
         }

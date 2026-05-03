@@ -24,20 +24,24 @@ namespace Licit.AuctionService.Domain.Entities
             ImgUrls = imgUrls;
         }
 
-        public string AuctionName { get; set; }
-        public int StartPrice { get; set; }
-        public int IncreaseAmount { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public string[] Rules { get; set; }
-        public string Description { get; set; }
-        public Guid? WinnerBidId { get; set; } = Guid.Empty;
-        public AuctionStatus Status { get; set; }
-        public Guid CreatedByUserId {  get; set; }
-        public string[] ImgUrls { get; set; }
+        public string AuctionName { get; private set; }
+        public int StartPrice { get; private set; }
+        public int IncreaseAmount { get; private set; }
+        public DateTime StartDate { get; private set; }
+        public DateTime EndDate { get; private set; }
+        public string[] Rules { get; private set; }
+        public string Description { get; private set; }
+        public Guid? WinnerBidId { get; private set; } = Guid.Empty;
+        public AuctionStatus Status { get; private set; }
+        public Guid CreatedByUserId {  get; private set; }
+        public string[] ImgUrls { get; private set; }
         public void UpdateWinnerBid(Guid winnerBidId)
         {
             this.WinnerBidId = winnerBidId;
+        }
+        public void SetStatus(AuctionStatus status)
+        {
+            this.Status = status;
         }
         private static void Validate(string auctionName, int startPrice, int increaseAmount, DateTime startDate, DateTime endDate, string[] imgUrls, string description)
         {
