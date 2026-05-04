@@ -1,6 +1,7 @@
 using FlashMediator;
 using FluentValidation;
 using Licit.AuctionService.API.ExceptionHandlers;
+using Licit.AuctionService.Application.Feature.CQRS.Auction.Command.CreateAuction;
 using Licit.AuctionService.Application.Interface;
 using Licit.AuctionService.Application.Repository;
 using Licit.AuctionService.Application.Validators;
@@ -20,7 +21,7 @@ builder.Services.AddDbContext<AuctionDbContext>(options =>
 });
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddValidatorsFromAssemblyContaining<AuctionValidator>();
-builder.Services.AddFlashMediator(typeof(Program).Assembly);
+builder.Services.AddFlashMediator(typeof(CreateAuctionCommandHandler).Assembly);
 builder.Services.AddSerilog(opt =>
 {
     opt
@@ -28,7 +29,9 @@ builder.Services.AddSerilog(opt =>
     .Console();
 });
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -45,5 +48,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

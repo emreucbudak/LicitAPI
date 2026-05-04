@@ -4,6 +4,7 @@ using FlashMediator;
 using FluentValidation;
 using Licit.MailService.API.BackgroundServices;
 using Licit.MailService.API.ExceptionHandlers;
+using Licit.MailService.API.Integrations;
 using Licit.MailService.Application.Behaviors;
 using Licit.MailService.Application.DTOs;
 using Licit.MailService.Application.Features.CQRS.Email.Commands.Send;
@@ -57,6 +58,16 @@ builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 // Services
 builder.Services.AddScoped<IEmailSender, AzureCommunicationEmailSender>();
+builder.Services.AddHttpClient<AuthUserEmailLookupClient>(client =>
+{
+    var configuredBaseUrl = builder.Configuration["AuthService:BaseUrl"];
+    var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+        ? "http://localhost:5122"
+        : configuredBaseUrl;
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(
+        builder.Configuration.GetValue<int?>("AuthService:DeadlineSeconds") ?? 5);
+});
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(typeof(SendEmailCommandHandler).Assembly);
@@ -119,6 +130,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // RabbitMQ Consumer
 builder.Services.AddHostedService<TenderEventConsumerService>();
+builder.Services.AddHostedService<BiddingOutbidEmailEventConsumerService>();
 builder.Services.AddHostedService<AuthLoginTwoFactorEventConsumerService>();
 builder.Services.AddHostedService<AuthRegisterVerificationEventConsumerService>();
 builder.Services.AddHostedService<AuthPasswordResetEventConsumerService>();
