@@ -6,7 +6,6 @@ namespace Licit.BiddingService.Infrastructure.Store
 {
     public class BidStateStore(IConnectionMultiplexer connectionMultiplexer) : IBidStateStore
     {
-        private const string ActiveStatus = "Active";
         private const string ActiveStatusTr = "Aktif";
         private const int RollbackTtlSeconds = 600;
 
@@ -14,7 +13,6 @@ namespace Licit.BiddingService.Infrastructure.Store
 local stateKey = KEYS[1]
 local amount = tonumber(ARGV[1])
 local activeStatus = ARGV[2]
-local activeStatusTr = ARGV[3]
 
 local status = redis.call('HGET', stateKey, 'status')
 local currentHighest = tonumber(redis.call('HGET', stateKey, 'highestBid') or '0')
@@ -26,7 +24,7 @@ if status == false then
   return {0, 'BID_STATE_NOT_FOUND', currentHighest, minimumRequired, version}
 end
 
-if status ~= activeStatus and status ~= activeStatusTr then
+if status ~= activeStatus then
   return {0, 'AUCTION_NOT_ACTIVE', currentHighest, minimumRequired, version}
 end
 
@@ -45,8 +43,7 @@ local bidId = ARGV[2]
 local bidderUserId = ARGV[3]
 local placedAt = ARGV[4]
 local activeStatus = ARGV[5]
-local activeStatusTr = ARGV[6]
-local rollbackTtlSeconds = tonumber(ARGV[7])
+local rollbackTtlSeconds = tonumber(ARGV[6])
 
 local status = redis.call('HGET', stateKey, 'status')
 local currentHighest = tonumber(redis.call('HGET', stateKey, 'highestBid') or '0')
@@ -58,7 +55,7 @@ if status == false then
   return {0, 'BID_STATE_NOT_FOUND', currentHighest, version}
 end
 
-if status ~= activeStatus and status ~= activeStatusTr then
+if status ~= activeStatus then
   return {0, 'AUCTION_NOT_ACTIVE', currentHighest, version}
 end
 
@@ -142,7 +139,7 @@ return {1, 'OK'}
             var result = ToArray(await _database.ScriptEvaluateAsync(
                 CheckBidCanEnterScript,
                 [GetStateKey(auctionId)],
-                [amount, ActiveStatus, ActiveStatusTr]));
+                [amount, ActiveStatusTr]));
 
             return IsSuccess(result[0])
                 ? BidStateCheckResult.Accepted(ToInt32(result[2]), ToInt32(result[3]), ToInt32(result[4]))
@@ -167,7 +164,6 @@ return {1, 'OK'}
                     bidId.ToString("D"),
                     bidderUserId.ToString("D"),
                     placedAt.ToUniversalTime().ToString("O"),
-                    ActiveStatus,
                     ActiveStatusTr,
                     RollbackTtlSeconds
                 ]));
