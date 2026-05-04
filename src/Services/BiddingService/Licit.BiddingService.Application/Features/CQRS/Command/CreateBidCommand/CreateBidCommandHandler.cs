@@ -12,7 +12,8 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
         IWalletClient walletClient,
         IBiddingRepository biddingRepository,
         IUnitOfWork unitOfWork,
-        IBiddingNotifier biddingNotifier) : IRequestHandler<CreateBidCommandRequest, CreateBidCommandResponse>
+        IBiddingNotifier biddingNotifier,
+        IBidEmailNotificationPublisher bidEmailNotificationPublisher) : IRequestHandler<CreateBidCommandRequest, CreateBidCommandResponse>
     {
         public async Task<CreateBidCommandResponse> Handle(
             CreateBidCommandRequest request,
@@ -63,6 +64,11 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
                 throw new BidPlacementException(updateResult.ErrorCode ?? "BID_STATE_UPDATE_FAILED");
             }
 
+            var previousBidderUserIds = await biddingRepository.GetDistinctBidderUserIdsForAuctionAsync(
+                request.AuctionId,
+                request.BidderUserId,
+                cancellationToken);
+
             try
             {
                 await biddingRepository.CreateBid(bid, cancellationToken);
@@ -90,6 +96,15 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
                 request.BidderUserId,
                 request.Amount,
                 bid.PlacedAt,
+                cancellationToken);
+
+            await bidEmailNotificationPublisher.PublishOutbidEmailRequestedAsync(
+                request.AuctionId,
+                bid.Id,
+                request.BidderUserId,
+                request.Amount,
+                bid.PlacedAt,
+                previousBidderUserIds,
                 cancellationToken);
 
             return new CreateBidCommandResponse(

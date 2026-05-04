@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Licit.AuctionService.Persistence\Licit.AuctionService.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Dockerfile" Link="Dockerfile" />
+  </ItemGroup>
+
 </Project>

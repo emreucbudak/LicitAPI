@@ -9,6 +9,8 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ReverseProxy__Clusters__auth-cluster__Destinations__auth-service__Address=http://auth-service:8080/
       - ReverseProxy__Clusters__tendering-cluster__Destinations__tendering-service__Address=http://tendering-service:8080/
+      - ReverseProxy__Clusters__auction-cluster__Destinations__auction-service__Address=http://auction-service:8080/
+      - ReverseProxy__Clusters__bidding-cluster__Destinations__bidding-service__Address=http://bidding-service:8080/
       - ReverseProxy__Clusters__wallet-cluster__Destinations__wallet-service__Address=http://wallet-service:8080/
       - ReverseProxy__Clusters__mail-cluster__Destinations__mail-service__Address=http://mail-service:8080/
       - ReverseProxy__Clusters__notification-cluster__Destinations__notification-service__Address=http://notification-service:8080/
@@ -20,6 +22,10 @@ services:
       auth-service:
         condition: service_started
       tendering-service:
+        condition: service_started
+      auction-service:
+        condition: service_started
+      bidding-service:
         condition: service_started
       wallet-service:
         condition: service_started
@@ -79,6 +85,41 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    networks:
+      - licit-network
+
+  auction-service:
+    build:
+      context: ..
+      dockerfile: src/Services/AuctionService/Dockerfile
+    container_name: licit-auction-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=${AUCTION_DB_CONNECTION_STRING}
+    ports:
+      - "5193:8080"
+    networks:
+      - licit-network
+
+  bidding-service:
+    build:
+      context: ..
+      dockerfile: src/Services/BiddingService/Dockerfile
+    container_name: licit-bidding-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=${BIDDING_DB_CONNECTION_STRING}
+      - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
+      - WalletGrpc__Address=http://wallet-service:5143
+      - WalletGrpc__ServiceKey=${WALLET_INTERNAL_GRPC_SERVICE_KEY:-licit-wallet-internal-dev-key}
+      - WalletGrpc__DeadlineSeconds=3
+    ports:
+      - "5106:8080"
+    depends_on:
+      wallet-service:
+        condition: service_started
     networks:
       - licit-network
 

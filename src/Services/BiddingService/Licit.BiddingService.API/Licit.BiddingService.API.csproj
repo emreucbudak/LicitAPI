@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Licit.BiddingService.Infrastructure\Licit.BiddingService.Infrastructure.csproj" />
     <ProjectReference Include="..\Licit.BiddingService.Persistence\Licit.BiddingService.Persistence.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Dockerfile" Link="Dockerfile" />
+  </ItemGroup>
 </Project>
