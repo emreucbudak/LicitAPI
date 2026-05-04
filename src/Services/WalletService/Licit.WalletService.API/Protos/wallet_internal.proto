@@ -3,7 +3,6 @@ syntax = "proto3";
 package licit.wallet.v1;
 
 option csharp_namespace = "Licit.WalletService.API.Grpc";
-option go_package = "github.com/licit/licit-go/pkg/walletpb;walletpb";
 
 service WalletInternal {
   rpc Freeze (WalletOperationRequest) returns (WalletOperationResponse);
