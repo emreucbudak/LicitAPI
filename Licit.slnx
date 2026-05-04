@@ -28,6 +28,7 @@
     <Project Path="src/Services/BiddingService/Licit.BiddingService.Application/Licit.BiddingService.Application.csproj" />
     <Project Path="src/Services/BiddingService/Licit.BiddingService.Domain/Licit.BiddingService.Domain.csproj" />
     <Project Path="src/Services/BiddingService/Licit.BiddingService.Infrastructure/Licit.BiddingService.Infrastructure.csproj" />
+    <Project Path="src/Services/BiddingService/Licit.BiddingService.Persistence/Licit.BiddingService.Persistence.csproj" Id="b91f3129-c421-4626-8435-1dc30cf8c40b" />
   </Folder>
   <Folder Name="/src/Services/WalletService/">
     <Project Path="src/Services/WalletService/Licit.WalletService.API/Licit.WalletService.API.csproj" />
@@ -57,7 +58,7 @@
     <Project Path="tests/Services/TenderingService/Licit.TenderingService.UnitTests/Licit.TenderingService.UnitTests.csproj" />
   </Folder>
   <Folder Name="/tests/Services/AuctionService/">
-    <Project Path="Licit.AuctionService.UnitTests/Licit.AuctionService.UnitTests.csproj" Id="90cbdf79-3ffd-4a3e-8982-be2220b75c91" />
+    <Project Path="tests/Services/AuctionService/Licit.AuctionService.UnitTests/Licit.AuctionService.UnitTests.csproj" Id="061a7dd8-d966-4a29-9be4-487a5579338d" />
   </Folder>
   <Folder Name="/tests/Services/AuthService/">
     <Project Path="tests/Services/AuthService/Licit.AuthService.UnitTests/Licit.AuthService.UnitTests.csproj" />
