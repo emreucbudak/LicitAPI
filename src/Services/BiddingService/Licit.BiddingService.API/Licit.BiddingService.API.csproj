@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Licit.BiddingService.Application\Licit.BiddingService.Application.csproj" />
+    <ProjectReference Include="..\Licit.BiddingService.Infrastructure\Licit.BiddingService.Infrastructure.csproj" />
+    <ProjectReference Include="..\Licit.BiddingService.Persistence\Licit.BiddingService.Persistence.csproj" />
   </ItemGroup>
-
 </Project>
