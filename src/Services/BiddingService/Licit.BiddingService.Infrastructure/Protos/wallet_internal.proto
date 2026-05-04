@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package licit.wallet.v1;
+
+option csharp_namespace = "Licit.WalletService.API.Grpc";
+option go_package = "github.com/licit/licit-go/pkg/walletpb;walletpb";
+
+service WalletInternal {
+  rpc Freeze (WalletOperationRequest) returns (WalletOperationResponse);
+  rpc Unfreeze (WalletOperationRequest) returns (WalletOperationResponse);
+  rpc Deduct (WalletOperationRequest) returns (WalletOperationResponse);
+}
+
+message WalletOperationRequest {
+  string user_id = 1;
+  int64 amount_cents = 2;
+  string reference_id = 3;
+  string operation_id = 4;
+  string description = 5;
+}
+
+message WalletOperationResponse {
+  string transaction_id = 1;
+  int64 available_balance_cents = 2;
+  int64 frozen_balance_cents = 3;
+  string created_at = 4;
+  bool idempotent_replay = 5;
+}
