@@ -72,7 +72,27 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
             try
             {
                 await biddingRepository.CreateBid(bid, cancellationToken);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                if (previousBidderUserIds.Count > 0)
+                {
+                    await unitOfWork.SaveChangesWithOutboxAsync(
+                        async outboxCancellationToken =>
+                        {
+                            await bidEmailNotificationPublisher.PublishOutbidEmailRequestedAsync(
+                                request.AuctionId,
+                                bid.Id,
+                                request.BidderUserId,
+                                request.Amount,
+                                bid.PlacedAt,
+                                previousBidderUserIds,
+                                outboxCancellationToken);
+                        },
+                        cancellationToken);
+                }
+                else
+                {
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                }
             }
             catch
             {
@@ -96,15 +116,6 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
                 request.BidderUserId,
                 request.Amount,
                 bid.PlacedAt,
-                cancellationToken);
-
-            await bidEmailNotificationPublisher.PublishOutbidEmailRequestedAsync(
-                request.AuctionId,
-                bid.Id,
-                request.BidderUserId,
-                request.Amount,
-                bid.PlacedAt,
-                previousBidderUserIds,
                 cancellationToken);
 
             return new CreateBidCommandResponse(
