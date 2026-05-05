@@ -5,7 +5,6 @@ using Licit.BiddingService.Infrastructure.Store;
 using Licit.WalletService.API.Grpc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
@@ -48,13 +47,7 @@ namespace Licit.BiddingService.Infrastructure
 
             services.AddScoped<IWalletClient, WalletGrpcClient>();
             services.AddScoped<IBidStateStore, BidStateStore>();
-            services.AddSingleton(serviceProvider =>
-                RabbitMqBidEmailNotificationPublisher.CreateAsync(
-                    serviceProvider.GetRequiredService<IConfiguration>(),
-                    serviceProvider.GetRequiredService<ILogger<RabbitMqBidEmailNotificationPublisher>>()
-                ).GetAwaiter().GetResult());
-            services.AddSingleton<IBidEmailNotificationPublisher>(serviceProvider =>
-                serviceProvider.GetRequiredService<RabbitMqBidEmailNotificationPublisher>());
+            services.AddScoped<IBidEmailNotificationPublisher, CapBidEmailNotificationPublisher>();
 
             return services;
         }

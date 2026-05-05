@@ -68,6 +68,7 @@ builder.Services.AddHttpClient<AuthUserEmailLookupClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(
         builder.Configuration.GetValue<int?>("AuthService:DeadlineSeconds") ?? 5);
 });
+builder.Services.AddTransient<BiddingOutbidEmailEventConsumerService>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(typeof(SendEmailCommandHandler).Assembly);
@@ -106,6 +107,24 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
+// CAP
+builder.Services.AddCap(options =>
+{
+    options.UsePostgreSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+    options.UseRabbitMQ(rabbitMq =>
+    {
+        var configuredHost = builder.Configuration["RabbitMq:Host"];
+        var configuredUsername = builder.Configuration["RabbitMq:Username"];
+        var configuredPassword = builder.Configuration["RabbitMq:Password"];
+
+        rabbitMq.HostName = string.IsNullOrWhiteSpace(configuredHost) ? "localhost" : configuredHost;
+        rabbitMq.Port = builder.Configuration.GetValue<int?>("RabbitMq:Port") ?? 5672;
+        rabbitMq.UserName = string.IsNullOrWhiteSpace(configuredUsername) ? "licit" : configuredUsername;
+        rabbitMq.Password = string.IsNullOrWhiteSpace(configuredPassword) ? "LicitDev2024!" : configuredPassword;
+        rabbitMq.ExchangeName = "licit.events";
+    });
+});
+
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -130,7 +149,6 @@ builder.Services.AddSwaggerGen(options =>
 
 // RabbitMQ Consumer
 builder.Services.AddHostedService<TenderEventConsumerService>();
-builder.Services.AddHostedService<BiddingOutbidEmailEventConsumerService>();
 builder.Services.AddHostedService<AuthLoginTwoFactorEventConsumerService>();
 builder.Services.AddHostedService<AuthRegisterVerificationEventConsumerService>();
 builder.Services.AddHostedService<AuthPasswordResetEventConsumerService>();

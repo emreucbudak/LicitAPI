@@ -5,10 +5,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\CQRS\Queries\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="FlashMediator" Version="1.0.1" />
   </ItemGroup>
 
