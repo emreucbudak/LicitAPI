@@ -4,6 +4,7 @@ using Licit.BiddingService.Application.Interfaces;
 using Licit.BiddingService.Application.Notifier;
 using Licit.BiddingService.Application.Repository;
 using Licit.BiddingService.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidCommand
 {
@@ -13,7 +14,8 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
         IBiddingRepository biddingRepository,
         IUnitOfWork unitOfWork,
         IBiddingNotifier biddingNotifier,
-        IBidEmailNotificationPublisher bidEmailNotificationPublisher) : IRequestHandler<CreateBidCommandRequest, CreateBidCommandResponse>
+        IBidEmailNotificationPublisher bidEmailNotificationPublisher,
+        ILogger<CreateBidCommandHandler> logger) : IRequestHandler<CreateBidCommandRequest, CreateBidCommandResponse>
     {
         public async Task<CreateBidCommandResponse> Handle(
             CreateBidCommandRequest request,
@@ -110,13 +112,24 @@ namespace Licit.BiddingService.Application.Features.CQRS.Command.CreateBidComman
                 throw;
             }
 
-            await biddingNotifier.NotifyBidPlacedAsync(
-                request.AuctionId,
-                bid.Id,
-                request.BidderUserId,
-                request.Amount,
-                bid.PlacedAt,
-                cancellationToken);
+            try
+            {
+                await biddingNotifier.NotifyBidPlacedAsync(
+                    request.AuctionId,
+                    bid.Id,
+                    request.BidderUserId,
+                    request.Amount,
+                    bid.PlacedAt,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Bid was saved, but live SignalR notification failed. AuctionId: {AuctionId}, BidId: {BidId}",
+                    request.AuctionId,
+                    bid.Id);
+            }
 
             return new CreateBidCommandResponse(
                 bid.Id,
