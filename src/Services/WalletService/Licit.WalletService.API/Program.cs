@@ -153,13 +153,6 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 if (app.Environment.IsDevelopment())
