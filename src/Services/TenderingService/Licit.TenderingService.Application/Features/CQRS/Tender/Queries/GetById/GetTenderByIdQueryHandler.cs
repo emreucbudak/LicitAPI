@@ -28,7 +28,7 @@ public class GetTenderByIdQueryHandler(
             tender.Status.ToString(),
             tender.CreatedByUserId,
             tender.CategoryId,
-            tender.Category.Name,
+            tender.Category?.Name ?? string.Empty,
             tender.ImageUrl,
             tender.CreatedAt,
             tender.UpdatedAt

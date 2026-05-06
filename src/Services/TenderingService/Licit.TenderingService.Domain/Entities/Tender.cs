@@ -17,7 +17,6 @@ public class Tender : BaseEntity
     public string? ImageBlobName { get; private set; }
 
     public Category Category { get; private set; } = null!;
-    public string[] Rule {  get; private set; }
 
     private Tender() { }
 

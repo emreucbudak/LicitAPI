@@ -11,6 +11,7 @@ namespace Licit.AuctionService.Application.Feature.CQRS.Auction.Queries.GetActiv
             var auctions = activeAuctions.Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize);
             return auctions.Select(auction => new GetActiveAuctionsQueriesResponse
             {
+                Id = auction.Id,
                 AuctionName = auction.AuctionName,
                 StartPrice = auction.StartPrice,
                 IncreaseAmount = auction.IncreaseAmount,

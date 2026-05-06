@@ -33,7 +33,7 @@ public class GetAllTendersQueryHandler(
             t.Status.ToString(),
             t.CreatedByUserId,
             t.CategoryId,
-            t.Category.Name,
+            t.Category?.Name ?? string.Empty,
             t.ImageUrl,
             t.CreatedAt
         )).ToList();
