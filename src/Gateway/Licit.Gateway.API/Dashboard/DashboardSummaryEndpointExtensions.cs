@@ -9,6 +9,7 @@ public static class DashboardSummaryEndpointExtensions
     private const string AuthClusterId = "auth-cluster";
     private const string WalletClusterId = "wallet-cluster";
     private const string TenderingClusterId = "tendering-cluster";
+    private const string AuctionClusterId = "auction-cluster";
 
     private static readonly JsonElement EmptyObject = JsonDocument.Parse("{}").RootElement.Clone();
 
@@ -54,7 +55,7 @@ public static class DashboardSummaryEndpointExtensions
         var balanceTask = GetJsonAsync(httpClient, configuration, WalletClusterId, "/api/wallet/balance", authorization.ToString(), cancellationToken);
         var transactionsTask = GetJsonAsync(httpClient, configuration, WalletClusterId, "/api/wallet/transactions?page=1&pageSize=20", authorization.ToString(), cancellationToken);
         var listingsTask = GetJsonAsync(httpClient, configuration, TenderingClusterId, "/api/tender?page=1&pageSize=20", authorization.ToString(), cancellationToken);
-        var activeListingsTask = GetJsonAsync(httpClient, configuration, TenderingClusterId, "/api/tender?page=1&pageSize=20&activeOnly=true", authorization.ToString(), cancellationToken);
+        var activeListingsTask = GetJsonAsync(httpClient, configuration, AuctionClusterId, "/api/auction/active?pageNumber=1&pageSize=20", authorization.ToString(), cancellationToken);
 
         await Task.WhenAll(balanceTask, transactionsTask, listingsTask, activeListingsTask);
 
@@ -63,7 +64,7 @@ public static class DashboardSummaryEndpointExtensions
         var listings = GetPayloadOrRecordError("listings", listingsTask.Result, errors, EmptyObject);
         var activeListingsPayload = GetPayloadOrRecordError("activeAuctions", activeListingsTask.Result, errors, EmptyObject);
 
-        var activeAuctions = ExtractItems(activeListingsPayload, "tenders");
+        var activeAuctions = ExtractItems(activeListingsPayload, "auctions");
         var recentBids = Array.Empty<JsonElement>();
 
         var response = new DashboardSummaryResponse(

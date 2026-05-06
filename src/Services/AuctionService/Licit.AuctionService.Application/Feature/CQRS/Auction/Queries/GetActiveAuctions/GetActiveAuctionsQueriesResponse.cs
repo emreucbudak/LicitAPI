@@ -2,6 +2,7 @@
 {
     public record GetActiveAuctionsQueriesResponse
     {
+        public Guid Id { get; init; }
         public string AuctionName { get; init; }
         public int StartPrice { get; init; }
         public int IncreaseAmount { get; init; }
