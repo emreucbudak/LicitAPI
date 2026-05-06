@@ -21,21 +21,46 @@ public class CachingPipelineBehavior<TRequest, TResponse>(
 
         var key = GenerateCacheKey(request);
 
-        var cached = await cache.GetStringAsync(key, cancellationToken);
-        if (cached is not null)
+        string? cached = null;
+
+        try
         {
-            logger.LogDebug("Önbellekte bulundu: {Key}", key);
-            return JsonSerializer.Deserialize<TResponse>(cached)!;
+            cached = await cache.GetStringAsync(key, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Cache read failed. Query will continue without cache. Key: {Key}", key);
         }
 
-        logger.LogDebug("Önbellekte bulunamadı: {Key}", key);
+        if (cached is not null)
+        {
+            logger.LogDebug("Cache hit: {Key}", key);
+
+            try
+            {
+                return JsonSerializer.Deserialize<TResponse>(cached)!;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Cached payload could not be deserialized. Query will continue without cache. Key: {Key}", key);
+            }
+        }
+
+        logger.LogDebug("Cache miss: {Key}", key);
         var response = await next();
 
-        await cache.SetStringAsync(
-            key,
-            JsonSerializer.Serialize(response),
-            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = DefaultExpiration },
-            cancellationToken);
+        try
+        {
+            await cache.SetStringAsync(
+                key,
+                JsonSerializer.Serialize(response),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = DefaultExpiration },
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Cache write failed. Response will be returned without caching. Key: {Key}", key);
+        }
 
         return response;
     }
