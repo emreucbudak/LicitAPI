@@ -1,12 +1,11 @@
 using FlashMediator;
 using FluentValidation;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetBalance.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetBalance;
 
 public class GetBalanceQueryHandler(
-    IWalletRepository walletRepository,
+    IWalletProvisioningService walletProvisioningService,
     IValidator<GetBalanceQueryRequest> validator) : IRequestHandler<GetBalanceQueryRequest, GetBalanceQueryResponse>
 {
     public async Task<GetBalanceQueryResponse> Handle(GetBalanceQueryRequest request, CancellationToken cancellationToken)
@@ -15,8 +14,7 @@ public class GetBalanceQueryHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
-            ?? throw new WalletNotFoundForBalanceException(request.UserId);
+        var wallet = await walletProvisioningService.EnsureWalletExistsAsync(request.UserId, cancellationToken);
 
         return new GetBalanceQueryResponse(
             wallet.Id,

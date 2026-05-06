@@ -84,6 +84,15 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
+builder.Services.AddHttpClient<IWalletProvisioningClient, WalletProvisioningClient>((serviceProvider, client) =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var baseUrl = configuration["WalletProvisioning:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+        client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+
+    client.Timeout = TimeSpan.FromSeconds(configuration.GetValue<int?>("WalletProvisioning:TimeoutSeconds") ?? 5);
+});
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
     var configuration = builder.Configuration["Redis:ConnectionString"]
