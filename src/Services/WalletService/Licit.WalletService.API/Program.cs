@@ -155,7 +155,6 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -166,6 +165,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapGrpcService<WalletInternalGrpcService>();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }))
+    .AllowAnonymous();
+app.MapHealthChecks("/ready");
 
 app.Run();
