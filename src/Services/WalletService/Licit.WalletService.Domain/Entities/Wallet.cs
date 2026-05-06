@@ -8,7 +8,7 @@ public class Wallet : BaseEntity
     public Guid UserId { get; private set; }
     public decimal Balance { get; private set; }
     public decimal FrozenBalance { get; private set; }
-    public byte[] RowVersion { get; set; } = null!;
+    public int Version { get; private set; }
 
     public ICollection<WalletTransaction> Transactions { get; private set; } = new List<WalletTransaction>();
 
@@ -19,6 +19,7 @@ public class Wallet : BaseEntity
         UserId = userId;
         Balance = 0;
         FrozenBalance = 0;
+        Version = 0;
     }
 
     public WalletTransaction Deposit(decimal amount)
@@ -27,7 +28,7 @@ public class Wallet : BaseEntity
             throw new InvalidAmountException("Deposit");
 
         Balance += amount;
-        UpdatedAt = DateTime.UtcNow;
+        MarkUpdated();
 
         var transaction = new WalletTransaction(Id, TransactionType.Deposit, amount,
             "Para yatırma", null, Balance, FrozenBalance);
@@ -43,7 +44,7 @@ public class Wallet : BaseEntity
             throw new InsufficientBalanceException();
 
         Balance -= amount;
-        UpdatedAt = DateTime.UtcNow;
+        MarkUpdated();
 
         var transaction = new WalletTransaction(Id, TransactionType.Withdraw, amount,
             "Para çekme", null, Balance, FrozenBalance);
@@ -60,7 +61,7 @@ public class Wallet : BaseEntity
 
         Balance -= amount;
         FrozenBalance += amount;
-        UpdatedAt = DateTime.UtcNow;
+        MarkUpdated();
 
         var transaction = new WalletTransaction(Id, TransactionType.Freeze, amount,
             description ?? "Teklif için bakiye bloke edildi", referenceId, Balance, FrozenBalance);
@@ -77,7 +78,7 @@ public class Wallet : BaseEntity
 
         FrozenBalance -= amount;
         Balance += amount;
-        UpdatedAt = DateTime.UtcNow;
+        MarkUpdated();
 
         var transaction = new WalletTransaction(Id, TransactionType.Unfreeze, amount,
             description ?? "İhale kaybedildi, bloke çözüldü", referenceId, Balance, FrozenBalance);
@@ -93,11 +94,17 @@ public class Wallet : BaseEntity
             throw new InsufficientFrozenBalanceException();
 
         FrozenBalance -= amount;
-        UpdatedAt = DateTime.UtcNow;
+        MarkUpdated();
 
         var transaction = new WalletTransaction(Id, TransactionType.Deduct, amount,
             description ?? "İhale kazanıldı, tutar kesildi", referenceId, Balance, FrozenBalance);
         Transactions.Add(transaction);
         return transaction;
+    }
+
+    private void MarkUpdated()
+    {
+        Version++;
+        UpdatedAt = DateTime.UtcNow;
     }
 }
