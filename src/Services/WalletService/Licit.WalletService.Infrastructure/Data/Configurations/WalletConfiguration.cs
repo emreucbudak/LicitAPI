@@ -18,8 +18,9 @@ public class WalletConfiguration : IEntityTypeConfiguration<Wallet>
         builder.Property(w => w.FrozenBalance)
             .HasPrecision(18, 2);
 
-        builder.Property(w => w.RowVersion)
-            .IsRowVersion();
+        builder.Property(w => w.Version)
+            .IsConcurrencyToken()
+            .HasDefaultValue(0);
 
         builder.HasMany(w => w.Transactions)
             .WithOne(t => t.Wallet)
