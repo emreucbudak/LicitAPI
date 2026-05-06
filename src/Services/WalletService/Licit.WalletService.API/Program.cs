@@ -7,6 +7,7 @@ using Licit.WalletService.API.Services;
 using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
 using Licit.WalletService.Application.Interfaces;
+using Licit.WalletService.Application.Services;
 using Licit.WalletService.Infrastructure.Data;
 using Licit.WalletService.Infrastructure.Repositories;
 using Licit.WalletService.Infrastructure.Services;
@@ -62,6 +63,7 @@ builder.Services.AddDbContext<WalletDbContext>(options =>
 // Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<IWalletProvisioningService, WalletProvisioningService>();
 builder.Services.AddScoped<IDepositIdempotencyStore, RedisDepositIdempotencyStore>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();

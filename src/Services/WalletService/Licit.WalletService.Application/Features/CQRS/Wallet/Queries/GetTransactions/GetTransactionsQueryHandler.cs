@@ -1,12 +1,12 @@
 using FlashMediator;
 using FluentValidation;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 
 namespace Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions;
 
 public class GetTransactionsQueryHandler(
     IWalletRepository walletRepository,
+    IWalletProvisioningService walletProvisioningService,
     IValidator<GetTransactionsQueryRequest> validator) : IRequestHandler<GetTransactionsQueryRequest, GetTransactionsQueryResponse>
 {
     public async Task<GetTransactionsQueryResponse> Handle(GetTransactionsQueryRequest request, CancellationToken cancellationToken)
@@ -15,8 +15,7 @@ public class GetTransactionsQueryHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
-            ?? throw new WalletNotFoundForTransactionsException(request.UserId);
+        var wallet = await walletProvisioningService.EnsureWalletExistsAsync(request.UserId, cancellationToken);
 
         var totalCount = await walletRepository.GetTransactionCountByWalletIdAsync(wallet.Id);
         var transactions = await walletRepository.GetTransactionsByWalletIdAsync(wallet.Id, request.Page, request.PageSize);

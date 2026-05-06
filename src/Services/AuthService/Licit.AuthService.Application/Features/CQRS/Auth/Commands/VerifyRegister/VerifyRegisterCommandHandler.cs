@@ -7,12 +7,15 @@ using Licit.AuthService.Application.Features.CQRS.Auth.Commands.Register.Excepti
 using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace Licit.AuthService.Application.Features.CQRS.Auth.Commands.VerifyRegister;
 
 public class VerifyRegisterCommandHandler(
     UserManager<ApplicationUser> userManager,
     IRegisterVerificationStore registerVerificationStore,
+    IWalletProvisioningClient walletProvisioningClient,
+    ILogger<VerifyRegisterCommandHandler> logger,
     IValidator<VerifyRegisterCommandRequest> validator) : IRequestHandler<VerifyRegisterCommandRequest, VerifyRegisterCommandResponse>
 {
     public async Task<VerifyRegisterCommandResponse> Handle(VerifyRegisterCommandRequest request, CancellationToken cancellationToken)
@@ -66,6 +69,15 @@ public class VerifyRegisterCommandHandler(
         var roleResult = await userManager.AddToRoleAsync(user, "User");
         if (!roleResult.Succeeded)
             throw new UserCreationFailedException(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+
+        try
+        {
+            await walletProvisioningClient.EnsureWalletAsync(user.Id, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Wallet provisioning failed after registration. UserId: {UserId}", user.Id);
+        }
 
         await registerVerificationStore.RemoveAsync(email, cancellationToken);
 
