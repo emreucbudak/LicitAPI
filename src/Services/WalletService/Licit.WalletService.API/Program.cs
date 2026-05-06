@@ -145,16 +145,6 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
-    dbContext.Database.EnsureCreated();
-    dbContext.Database.ExecuteSqlRaw("""
-        ALTER TABLE "Wallets" ADD COLUMN IF NOT EXISTS "Version" integer NOT NULL DEFAULT 0;
-        ALTER TABLE "Wallets" DROP COLUMN IF EXISTS "RowVersion";
-        """);
-}
-
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
