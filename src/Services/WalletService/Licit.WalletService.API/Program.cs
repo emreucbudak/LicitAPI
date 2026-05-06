@@ -21,11 +21,19 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var httpPort = builder.Configuration.GetValue<int?>("Http:Port")
+    ?? builder.Configuration.GetValue<int?>("PORT")
+    ?? 8080;
 var internalGrpcPort = builder.Configuration.GetValue<int?>("InternalGrpc:Port");
 if (internalGrpcPort is > 0)
 {
     builder.WebHost.ConfigureKestrel(options =>
     {
+        options.ListenAnyIP(httpPort, listenOptions =>
+        {
+            listenOptions.Protocols = HttpProtocols.Http1;
+        });
+
         options.ListenAnyIP(internalGrpcPort.Value, listenOptions =>
         {
             listenOptions.Protocols = HttpProtocols.Http2;
