@@ -9,6 +9,7 @@ using Licit.AuthService.Application.Interfaces;
 using Licit.AuthService.Domain.Entities;
 using Licit.AuthService.UnitTests.Common;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Licit.AuthService.UnitTests.Application.Handlers;
@@ -17,6 +18,8 @@ public class VerifyRegisterCommandHandlerTests
 {
     private readonly UserManager<ApplicationUser> _userManager = UserManagerMockHelper.CreateMock();
     private readonly IRegisterVerificationStore _registerVerificationStore = Substitute.For<IRegisterVerificationStore>();
+    private readonly IWalletProvisioningClient _walletProvisioningClient = Substitute.For<IWalletProvisioningClient>();
+    private readonly ILogger<VerifyRegisterCommandHandler> _logger = Substitute.For<ILogger<VerifyRegisterCommandHandler>>();
     private readonly IValidator<VerifyRegisterCommandRequest> _validator = Substitute.For<IValidator<VerifyRegisterCommandRequest>>();
     private readonly VerifyRegisterCommandHandler _handler;
 
@@ -27,6 +30,8 @@ public class VerifyRegisterCommandHandlerTests
         _handler = new VerifyRegisterCommandHandler(
             _userManager,
             _registerVerificationStore,
+            _walletProvisioningClient,
+            _logger,
             _validator);
     }
 

@@ -12,7 +12,7 @@ public class TokenServiceTests
         Secret = "this-is-a-test-secret-with-enough-length-for-hmac-sha256",
         Issuer = "licit-auth-tests",
         Audience = "licit-auth-tests",
-        RefreshTokenExpirationDays = 7
+        RefreshTokenExpirationDays = 1
     };
 
     [Fact]

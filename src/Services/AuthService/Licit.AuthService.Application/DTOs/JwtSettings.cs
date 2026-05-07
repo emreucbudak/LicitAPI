@@ -17,5 +17,5 @@ public record JwtSettings
     public int AccessTokenExpirationMinutes { get; init; } = 15;
 
     [Range(1, 365)]
-    public int RefreshTokenExpirationDays { get; init; } = 7;
+    public int RefreshTokenExpirationDays { get; init; } = 1;
 }
