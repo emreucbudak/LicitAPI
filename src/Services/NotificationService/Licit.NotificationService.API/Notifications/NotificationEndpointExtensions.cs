@@ -10,10 +10,8 @@ public static class NotificationEndpointExtensions
             .RequireAuthorization(NotificationAuth.AccessTokenPolicy);
 
         group.MapGet("", GetNotificationsAsync);
-        group.MapGet("/", GetNotificationsAsync);
         group.MapGet("/unread-count", GetUnreadCountAsync);
         group.MapPost("", PublishNotificationAsync);
-        group.MapPost("/", PublishNotificationAsync);
         group.MapPatch("/{id}/read", MarkReadAsync);
         group.MapPatch("/read-all", MarkAllReadAsync);
 

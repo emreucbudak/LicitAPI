@@ -1,4 +1,5 @@
 using System.Text;
+using DotNetCore.CAP;
 using Licit.NotificationService.API.Data;
 using Licit.NotificationService.API.Notifications;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -35,6 +36,7 @@ builder.Services.AddDbContext<NotificationDbContext>(options =>
 
 builder.Services.AddScoped<INotificationStore, DbNotificationStore>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddTransient<BiddingOutbidNotificationEventConsumerService>();
 builder.Services.AddSingleton<IUserIdProvider, NotificationUserIdProvider>();
 builder.Services.AddSignalR();
 
@@ -55,6 +57,19 @@ builder.Services.AddAuthentication(options =>
             {
                 context.Token = accessToken;
             }
+
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("NotificationService.JwtBearer");
+
+            logger.LogWarning(
+                context.Exception,
+                "Notification authentication failed. Path: {Path}",
+                context.HttpContext.Request.Path);
 
             return Task.CompletedTask;
         }
@@ -78,6 +93,26 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(NotificationAuth.AccessTokenPolicy, policy =>
         policy.RequireAuthenticatedUser()
             .RequireClaim("tokenType", NotificationAuth.AccessTokenType));
+});
+
+builder.Services.AddCap(options =>
+{
+    options.UsePostgreSql(builder.Configuration.GetConnectionString("DefaultConnection")!);
+    options.UseRabbitMQ(rabbitMq =>
+    {
+        var configuredHost = builder.Configuration["RabbitMq:Host"];
+        var configuredUsername = builder.Configuration["RabbitMq:Username"];
+        var configuredPassword = builder.Configuration["RabbitMq:Password"];
+        var configuredExchangeName = builder.Configuration["RabbitMq:ExchangeName"];
+
+        rabbitMq.HostName = string.IsNullOrWhiteSpace(configuredHost) ? "localhost" : configuredHost;
+        rabbitMq.Port = builder.Configuration.GetValue<int?>("RabbitMq:Port") ?? 5672;
+        rabbitMq.UserName = string.IsNullOrWhiteSpace(configuredUsername) ? "licit" : configuredUsername;
+        rabbitMq.Password = string.IsNullOrWhiteSpace(configuredPassword) ? "LicitDev2024!" : configuredPassword;
+        rabbitMq.ExchangeName = string.IsNullOrWhiteSpace(configuredExchangeName)
+            ? "licit.events"
+            : configuredExchangeName;
+    });
 });
 
 builder.Services.AddEndpointsApiExplorer();
