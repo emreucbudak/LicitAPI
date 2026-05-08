@@ -22,7 +22,7 @@ public class Wallet : BaseEntity
         Version = 0;
     }
 
-    public WalletTransaction Deposit(decimal amount)
+    public WalletTransaction Deposit(decimal amount, Guid? referenceId = null, string? description = null)
     {
         if (amount <= 0)
             throw new InvalidAmountException("Deposit");
@@ -31,7 +31,7 @@ public class Wallet : BaseEntity
         MarkUpdated();
 
         var transaction = new WalletTransaction(Id, TransactionType.Deposit, amount,
-            "Para yatırma", null, Balance, FrozenBalance);
+            description ?? "Para yatırma", referenceId, Balance, FrozenBalance);
         Transactions.Add(transaction);
         return transaction;
     }

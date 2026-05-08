@@ -31,12 +31,12 @@ public class WalletController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("deposit")]
-    public async Task<IActionResult> Deposit(
-        [FromBody] DepositCurrentUserFundsCommandRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey)
+    public IActionResult Deposit()
     {
-        var result = await mediator.Send(request with { IdempotencyKey = idempotencyKey });
-        return Ok(result);
+        return StatusCode(StatusCodes.Status410Gone, new
+        {
+            message = "Cuzdan yuklemeleri Stripe odeme akisi uzerinden yapilmalidir."
+        });
     }
 
     [HttpPost("withdraw")]

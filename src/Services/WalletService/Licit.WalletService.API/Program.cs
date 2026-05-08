@@ -3,6 +3,7 @@ using FlashMediator;
 using FluentValidation;
 using Licit.WalletService.API.Grpc;
 using Licit.WalletService.API.ExceptionHandlers;
+using Licit.WalletService.API.Payments;
 using Licit.WalletService.API.Services;
 using Licit.WalletService.Application.Behaviors;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
@@ -18,6 +19,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using StackExchange.Redis;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +77,9 @@ builder.Services.AddScoped<IWalletProvisioningService, WalletProvisioningService
 builder.Services.AddScoped<IDepositIdempotencyStore, RedisDepositIdempotencyStore>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
+builder.Services.Configure<StripeWalletOptions>(builder.Configuration.GetSection("Stripe"));
+builder.Services.AddSingleton<PaymentIntentService>();
+builder.Services.AddScoped<StripeWalletDepositService>();
 
 // Redis
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>

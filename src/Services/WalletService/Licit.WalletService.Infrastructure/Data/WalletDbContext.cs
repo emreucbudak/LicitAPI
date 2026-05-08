@@ -9,6 +9,7 @@ public class WalletDbContext : DbContext
 
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
+    public DbSet<WalletDepositPayment> WalletDepositPayments => Set<WalletDepositPayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

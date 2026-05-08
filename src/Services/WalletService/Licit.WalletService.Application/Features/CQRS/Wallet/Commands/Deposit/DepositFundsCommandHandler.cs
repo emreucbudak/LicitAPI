@@ -21,6 +21,23 @@ public class DepositFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
+        var wallet = await walletRepository.GetByUserIdAsync(request.UserId);
+
+        if (wallet is not null && request.ReferenceId.HasValue)
+        {
+            var existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
+                wallet.Id,
+                Domain.Entities.TransactionType.Deposit,
+                request.ReferenceId.Value);
+
+            if (existingTransaction is not null)
+                return new DepositFundsCommandResponse(
+                    existingTransaction.Id,
+                    existingTransaction.BalanceAfter,
+                    existingTransaction.FrozenBalanceAfter,
+                    existingTransaction.CreatedAt);
+        }
+
         var reserved = await idempotencyStore.TryReserveAsync(
             request.UserId,
             request.IdempotencyKey,
@@ -32,8 +49,6 @@ public class DepositFundsCommandHandler(
 
         try
         {
-            var wallet = await walletRepository.GetByUserIdAsync(request.UserId);
-
             if (wallet is null)
             {
                 wallet = new Domain.Entities.Wallet(request.UserId);
@@ -41,7 +56,7 @@ public class DepositFundsCommandHandler(
                 await unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            var transaction = wallet.Deposit(request.Amount);
+            var transaction = wallet.Deposit(request.Amount, request.ReferenceId, request.Description);
 
             try
             {
@@ -50,6 +65,22 @@ public class DepositFundsCommandHandler(
             catch (DbUpdateConcurrencyException)
             {
                 throw new ConcurrencyException();
+            }
+            catch (DbUpdateException) when (request.ReferenceId.HasValue)
+            {
+                var existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
+                    wallet.Id,
+                    Domain.Entities.TransactionType.Deposit,
+                    request.ReferenceId.Value);
+
+                if (existingTransaction is not null)
+                    return new DepositFundsCommandResponse(
+                        existingTransaction.Id,
+                        existingTransaction.BalanceAfter,
+                        existingTransaction.FrozenBalanceAfter,
+                        existingTransaction.CreatedAt);
+
+                throw;
             }
 
             return new DepositFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
