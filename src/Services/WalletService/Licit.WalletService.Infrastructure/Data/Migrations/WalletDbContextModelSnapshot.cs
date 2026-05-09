@@ -110,7 +110,6 @@ namespace Licit.WalletService.Infrastructure.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("Version")
-                        .IsConcurrencyToken()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);

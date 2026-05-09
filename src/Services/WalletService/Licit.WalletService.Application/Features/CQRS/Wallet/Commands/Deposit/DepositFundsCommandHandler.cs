@@ -1,6 +1,7 @@
 using FlashMediator;
 using FluentValidation;
 using Licit.WalletService.Application.Exceptions;
+using Licit.WalletService.Application.Extensions;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -14,29 +15,13 @@ public class DepositFundsCommandHandler(
     IValidator<DepositFundsCommandRequest> validator) : IRequestHandler<DepositFundsCommandRequest, DepositFundsCommandResponse>
 {
     private static readonly TimeSpan IdempotencyTtl = TimeSpan.FromMinutes(2);
+    private const string WalletUserIdConstraintName = "IX_Wallets_UserId";
 
     public async Task<DepositFundsCommandResponse> Handle(DepositFundsCommandRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
-
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId);
-
-        if (wallet is not null && request.ReferenceId.HasValue)
-        {
-            var existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
-                wallet.Id,
-                Domain.Entities.TransactionType.Deposit,
-                request.ReferenceId.Value);
-
-            if (existingTransaction is not null)
-                return new DepositFundsCommandResponse(
-                    existingTransaction.Id,
-                    existingTransaction.BalanceAfter,
-                    existingTransaction.FrozenBalanceAfter,
-                    existingTransaction.CreatedAt);
-        }
 
         var reserved = await idempotencyStore.TryReserveAsync(
             request.UserId,
@@ -49,11 +34,44 @@ public class DepositFundsCommandHandler(
 
         try
         {
+            await using var unitOfWorkTransaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
+            var wallet = await walletRepository.GetByUserIdForUpdateAsync(request.UserId);
+
+            if (wallet is not null && request.ReferenceId.HasValue)
+            {
+                var existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
+                    wallet.Id,
+                    Domain.Entities.TransactionType.Deposit,
+                    request.ReferenceId.Value);
+
+                if (existingTransaction is not null)
+                {
+                    await unitOfWorkTransaction.CommitAsync(cancellationToken);
+                    return new DepositFundsCommandResponse(
+                        existingTransaction.Id,
+                        existingTransaction.BalanceAfter,
+                        existingTransaction.FrozenBalanceAfter,
+                        existingTransaction.CreatedAt);
+                }
+            }
+
             if (wallet is null)
             {
                 wallet = new Domain.Entities.Wallet(request.UserId);
                 walletRepository.Add(wallet);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                try
+                {
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateException exception) when (exception.IsUniqueConstraintViolation(WalletUserIdConstraintName))
+                {
+                    walletRepository.Detach(wallet);
+                    wallet = await walletRepository.GetByUserIdForUpdateAsync(request.UserId);
+
+                    if (wallet is null)
+                        throw;
+                }
             }
 
             var transaction = wallet.Deposit(request.Amount, request.ReferenceId, request.Description);
@@ -74,15 +92,19 @@ public class DepositFundsCommandHandler(
                     request.ReferenceId.Value);
 
                 if (existingTransaction is not null)
+                {
+                    await unitOfWorkTransaction.CommitAsync(cancellationToken);
                     return new DepositFundsCommandResponse(
                         existingTransaction.Id,
                         existingTransaction.BalanceAfter,
                         existingTransaction.FrozenBalanceAfter,
                         existingTransaction.CreatedAt);
+                }
 
                 throw;
             }
 
+            await unitOfWorkTransaction.CommitAsync(cancellationToken);
             return new DepositFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch

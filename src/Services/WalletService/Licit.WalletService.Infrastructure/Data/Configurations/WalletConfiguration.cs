@@ -19,7 +19,6 @@ public class WalletConfiguration : IEntityTypeConfiguration<Wallet>
             .HasPrecision(18, 2);
 
         builder.Property(w => w.Version)
-            .IsConcurrencyToken()
             .HasDefaultValue(0);
 
         builder.HasMany(w => w.Transactions)

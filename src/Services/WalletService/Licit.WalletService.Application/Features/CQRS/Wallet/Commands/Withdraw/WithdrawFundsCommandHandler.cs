@@ -18,13 +18,16 @@ public class WithdrawFundsCommandHandler(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
+        await using var unitOfWorkTransaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        var wallet = await walletRepository.GetByUserIdForUpdateAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
         try
         {
             var transaction = wallet.Withdraw(request.Amount);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWorkTransaction.CommitAsync(cancellationToken);
             return new WithdrawFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);
         }
         catch (DbUpdateConcurrencyException) { throw new ConcurrencyException(); }

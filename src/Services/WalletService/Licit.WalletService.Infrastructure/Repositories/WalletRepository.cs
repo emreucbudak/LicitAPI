@@ -15,7 +15,14 @@ public class WalletRepository : IWalletRepository
         await _context.Wallets
             .FirstOrDefaultAsync(w => w.UserId == userId);
 
+    public async Task<Wallet?> GetByUserIdForUpdateAsync(Guid userId) =>
+        await _context.Wallets
+            .FromSqlInterpolated($"SELECT * FROM \"Wallets\" WHERE \"UserId\" = {userId} FOR UPDATE")
+            .FirstOrDefaultAsync();
+
     public void Add(Wallet wallet) => _context.Wallets.Add(wallet);
+
+    public void Detach(Wallet wallet) => _context.Entry(wallet).State = EntityState.Detached;
 
     public void Update(Wallet wallet) => _context.Wallets.Update(wallet);
 

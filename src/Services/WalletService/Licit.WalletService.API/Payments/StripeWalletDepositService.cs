@@ -139,7 +139,7 @@ public class StripeWalletDepositService(
         switch (stripeEvent.Type)
         {
             case EventTypes.PaymentIntentSucceeded:
-                await ApplyPaymentIntentAsync(paymentIntent, expectedUserId: null, cancellationToken);
+                await ConfirmPaymentIntentSucceededAsync(paymentIntent, cancellationToken);
                 break;
             case EventTypes.PaymentIntentPaymentFailed:
                 await MarkPaymentFailedAsync(paymentIntent, cancellationToken);
@@ -181,31 +181,51 @@ public class StripeWalletDepositService(
                 payment.Amount,
                 payment.Currency);
 
-        VerifyPaymentIntentMatches(payment, paymentIntent);
+        var stripeAmount = VerifyPaymentIntentMatches(payment, paymentIntent);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var depositResult = await mediator.Send(
-            new DepositFundsCommandRequest(
-                payment.UserId,
-                payment.Amount,
-                $"stripe:{paymentIntent.Id}",
+        try
+        {
+            var depositResult = await mediator.Send(
+                new DepositFundsCommandRequest(
+                    payment.UserId,
+                    stripeAmount,
+                    $"stripe:{paymentIntent.Id}",
+                    payment.Id,
+                    "Stripe kart ile cüzdan yükleme"),
+                cancellationToken);
+
+            payment.MarkSucceeded(depositResult.TransactionId);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return new WalletDepositPaymentSyncResponse(
                 payment.Id,
-                "Stripe kart ile cüzdan yükleme"),
-            cancellationToken);
+                paymentIntent.Id,
+                payment.Status.ToString(),
+                true,
+                depositResult.TransactionId,
+                stripeAmount,
+                payment.Currency);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
 
-        payment.MarkSucceeded(depositResult.TransactionId);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+    private async Task ConfirmPaymentIntentSucceededAsync(PaymentIntent paymentIntent, CancellationToken cancellationToken)
+    {
+        var payment = await FindPaymentAsync(paymentIntent, cancellationToken);
+        if (payment is null || payment.Status == WalletDepositPaymentStatus.Succeeded)
+            return;
 
-        return new WalletDepositPaymentSyncResponse(
-            payment.Id,
-            paymentIntent.Id,
-            payment.Status.ToString(),
-            true,
-            depositResult.TransactionId,
-            payment.Amount,
-            payment.Currency);
+        if (!string.Equals(paymentIntent.Status, "succeeded", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        VerifyPaymentIntentMatches(payment, paymentIntent);
     }
 
     private async Task MarkPaymentFailedAsync(PaymentIntent paymentIntent, CancellationToken cancellationToken)
@@ -259,7 +279,7 @@ public class StripeWalletDepositService(
         return payment;
     }
 
-    private void VerifyPaymentIntentMatches(WalletDepositPayment payment, PaymentIntent paymentIntent)
+    private decimal VerifyPaymentIntentMatches(WalletDepositPayment payment, PaymentIntent paymentIntent)
     {
         if (!string.Equals(paymentIntent.Currency, payment.Currency, StringComparison.OrdinalIgnoreCase))
             throw new BusinessRuleException("Odeme para birimi cuzdan yukleme kaydiyla eslesmiyor.");
@@ -270,6 +290,8 @@ public class StripeWalletDepositService(
 
         if (receivedAmount != ToMinorUnits(payment.Amount))
             throw new BusinessRuleException("Odeme tutari cuzdan yukleme kaydiyla eslesmiyor.");
+
+        return FromMinorUnits(receivedAmount);
     }
 
     private void ValidateAmount(decimal amount)
@@ -309,4 +331,7 @@ public class StripeWalletDepositService(
 
     private static long ToMinorUnits(decimal amount) =>
         decimal.ToInt64(decimal.Round(amount * 100m, 0, MidpointRounding.AwayFromZero));
+
+    private static decimal FromMinorUnits(long amount) =>
+        decimal.Round(amount / 100m, 2);
 }

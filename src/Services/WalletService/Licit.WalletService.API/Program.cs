@@ -77,7 +77,20 @@ builder.Services.AddScoped<IWalletProvisioningService, WalletProvisioningService
 builder.Services.AddScoped<IDepositIdempotencyStore, RedisDepositIdempotencyStore>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
-builder.Services.Configure<StripeWalletOptions>(builder.Configuration.GetSection("Stripe"));
+var stripeOptionsBuilder = builder.Services.AddOptions<StripeWalletOptions>()
+    .BindConfiguration("Stripe")
+    .Validate(options => options.MinimumAmount > 0,
+        "Stripe:MinimumAmount must be greater than zero.")
+    .Validate(options => options.MaximumAmount >= options.MinimumAmount,
+        "Stripe:MaximumAmount must be greater than or equal to Stripe:MinimumAmount.");
+
+if (!builder.Environment.IsDevelopment())
+{
+    stripeOptionsBuilder.Validate(options => !string.IsNullOrWhiteSpace(options.SecretKey),
+        "Stripe secret key is not configured. Set Stripe__SecretKey.");
+}
+
+stripeOptionsBuilder.ValidateOnStart();
 builder.Services.AddSingleton<PaymentIntentService>();
 builder.Services.AddScoped<StripeWalletDepositService>();
 
@@ -157,6 +170,12 @@ builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgresql");
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
+    dbContext.Database.Migrate();
+}
 
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
