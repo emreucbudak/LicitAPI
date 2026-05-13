@@ -33,8 +33,10 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? ["http://localhost:3000"];
+        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+        if (origins is null || origins.Length == 0 || origins.Any(string.IsNullOrWhiteSpace))
+            throw new InvalidOperationException("Cors:AllowedOrigins must be configured.");
+
         policy.WithOrigins(origins)
               .AllowAnyHeader()
               .AllowAnyMethod()

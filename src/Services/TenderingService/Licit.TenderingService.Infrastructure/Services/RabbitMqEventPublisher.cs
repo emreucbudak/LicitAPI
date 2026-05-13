@@ -25,10 +25,10 @@ public class RabbitMqEventPublisher : IEventPublisher, IAsyncDisposable
     {
         var factory = new ConnectionFactory
         {
-            HostName = configuration["RabbitMq:Host"] ?? "localhost",
-            Port = int.Parse(configuration["RabbitMq:Port"] ?? "5672"),
-            UserName = configuration["RabbitMq:Username"] ?? "licit",
-            Password = configuration["RabbitMq:Password"] ?? "LicitDev2024!"
+            HostName = RequireConfigurationValue(configuration, "RabbitMq:Host"),
+            Port = RequireConfigurationInt(configuration, "RabbitMq:Port"),
+            UserName = RequireConfigurationValue(configuration, "RabbitMq:Username"),
+            Password = RequireConfigurationValue(configuration, "RabbitMq:Password")
         };
 
         var connection = await factory.CreateConnectionAsync();
@@ -61,5 +61,23 @@ public class RabbitMqEventPublisher : IEventPublisher, IAsyncDisposable
     {
         await _channel.CloseAsync();
         await _connection.CloseAsync();
+    }
+
+    private static string RequireConfigurationValue(IConfiguration configuration, string key)
+    {
+        var value = configuration[key];
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidOperationException($"{key} must be configured.");
+
+        return value;
+    }
+
+    private static int RequireConfigurationInt(IConfiguration configuration, string key)
+    {
+        var value = RequireConfigurationValue(configuration, key);
+        if (!int.TryParse(value, out var parsed))
+            throw new InvalidOperationException($"{key} must be a valid integer.");
+
+        return parsed;
     }
 }

@@ -16,14 +16,10 @@ public class AzureBlobTenderImageStorageService(IOptions<TenderImageStorageOptio
         Stream content,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_options.ConnectionString))
-            throw new InvalidOperationException("TenderImages:ConnectionString must be configured.");
+        var connectionString = RequireOption(_options.ConnectionString, "TenderImages:ConnectionString");
+        var containerName = RequireOption(_options.ContainerName, "TenderImages:ContainerName").Trim();
 
-        var containerName = string.IsNullOrWhiteSpace(_options.ContainerName)
-            ? "tender-images"
-            : _options.ContainerName.Trim();
-
-        var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);
+        var containerClient = new BlobContainerClient(connectionString, containerName);
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
 
         var blobName = $"tenders/{tenderId:N}/{Guid.CreateVersion7():N}{GetExtension(fileName, contentType)}";
@@ -40,28 +36,25 @@ public class AzureBlobTenderImageStorageService(IOptions<TenderImageStorageOptio
 
         await blobClient.UploadAsync(content, uploadOptions, cancellationToken);
 
-        return new TenderImageUploadResult(BuildPublicUrl(blobClient, blobName), blobName);
+        return new TenderImageUploadResult(BuildPublicUrl(blobName), blobName);
     }
 
     public async Task DeleteTenderImageAsync(string blobName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_options.ConnectionString) || string.IsNullOrWhiteSpace(blobName))
+        if (string.IsNullOrWhiteSpace(blobName))
             return;
 
-        var containerName = string.IsNullOrWhiteSpace(_options.ContainerName)
-            ? "tender-images"
-            : _options.ContainerName.Trim();
+        var connectionString = RequireOption(_options.ConnectionString, "TenderImages:ConnectionString");
+        var containerName = RequireOption(_options.ContainerName, "TenderImages:ContainerName").Trim();
 
-        var blobClient = new BlobClient(_options.ConnectionString, containerName, blobName);
+        var blobClient = new BlobClient(connectionString, containerName, blobName);
         await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
     }
 
-    private string BuildPublicUrl(BlobClient blobClient, string blobName)
+    private string BuildPublicUrl(string blobName)
     {
-        if (string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
-            return blobClient.Uri.ToString();
-
-        return $"{_options.PublicBaseUrl.TrimEnd('/')}/{blobName}";
+        var publicBaseUrl = RequireOption(_options.PublicBaseUrl, "TenderImages:PublicBaseUrl");
+        return $"{publicBaseUrl.TrimEnd('/')}/{blobName}";
     }
 
     private static string GetExtension(string fileName, string contentType)
@@ -76,5 +69,13 @@ public class AzureBlobTenderImageStorageService(IOptions<TenderImageStorageOptio
             "image/webp" => ".webp",
             _ => ".jpg"
         };
+    }
+
+    private static string RequireOption(string? value, string key)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidOperationException($"{key} must be configured.");
+
+        return value;
     }
 }
