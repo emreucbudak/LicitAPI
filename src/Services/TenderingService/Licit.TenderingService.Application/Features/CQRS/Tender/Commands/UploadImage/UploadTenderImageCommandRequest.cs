@@ -7,5 +7,6 @@ public record UploadTenderImageCommandRequest(
     Stream ImageStream,
     string FileName,
     string ContentType,
-    long Length
+    long Length,
+    bool ReplaceExisting = false
 ) : IRequest<UploadTenderImageCommandResponse>;

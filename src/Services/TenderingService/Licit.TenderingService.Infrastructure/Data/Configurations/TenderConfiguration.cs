@@ -31,6 +31,14 @@ public class TenderConfiguration : IEntityTypeConfiguration<Tender>
         builder.Property(t => t.ImageBlobName)
             .HasMaxLength(512);
 
+        builder.Property(t => t.ImageUrls)
+            .HasColumnType("text[]")
+            .HasDefaultValue(Array.Empty<string>());
+
+        builder.Property(t => t.ImageBlobNames)
+            .HasColumnType("text[]")
+            .HasDefaultValue(Array.Empty<string>());
+
         builder.HasIndex(t => t.Status);
         builder.HasIndex(t => new { t.Status, t.EndDate, t.StartDate });
         builder.HasIndex(t => t.CreatedAt)

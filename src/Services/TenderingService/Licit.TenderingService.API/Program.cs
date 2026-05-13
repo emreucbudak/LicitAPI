@@ -147,6 +147,8 @@ using (var scope = app.Services.CreateScope())
     dbContext.Database.ExecuteSqlRaw("""
         ALTER TABLE "Tenders" ADD COLUMN IF NOT EXISTS "ImageUrl" character varying(2048);
         ALTER TABLE "Tenders" ADD COLUMN IF NOT EXISTS "ImageBlobName" character varying(512);
+        ALTER TABLE "Tenders" ADD COLUMN IF NOT EXISTS "ImageUrls" text[] NOT NULL DEFAULT ARRAY[]::text[];
+        ALTER TABLE "Tenders" ADD COLUMN IF NOT EXISTS "ImageBlobNames" text[] NOT NULL DEFAULT ARRAY[]::text[];
         """);
 }
 

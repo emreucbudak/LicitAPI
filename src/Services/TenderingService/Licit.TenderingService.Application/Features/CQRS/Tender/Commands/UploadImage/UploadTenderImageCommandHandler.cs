@@ -5,6 +5,7 @@ using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById.Ex
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
 using Licit.TenderingService.Domain.Exceptions;
+using TenderEntity = Licit.TenderingService.Domain.Entities.Tender;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Commands.UploadImage;
 
@@ -34,7 +35,13 @@ public class UploadTenderImageCommandHandler(
         if (tender.Status != TenderStatus.Draft)
             throw new TenderNotEditableException();
 
-        var previousBlobName = tender.ImageBlobName;
+        if (!request.ReplaceExisting && tender.ImageUrls.Length >= TenderEntity.MaxImageCount)
+            throw new InvalidOperationException($"Bir ihaleye en fazla {TenderEntity.MaxImageCount} gorsel yuklenebilir.");
+
+        var previousBlobNames = request.ReplaceExisting
+            ? GetExistingBlobNames(tender)
+            : [];
+
         var uploadResult = await imageStorage.UploadTenderImageAsync(
             tender.Id,
             request.FileName,
@@ -42,17 +49,33 @@ public class UploadTenderImageCommandHandler(
             request.ImageStream,
             cancellationToken);
 
-        tender.SetImage(uploadResult.ImageUrl, uploadResult.BlobName);
+        if (request.ReplaceExisting)
+            tender.SetImage(uploadResult.ImageUrl, uploadResult.BlobName);
+        else
+            tender.AddImage(uploadResult.ImageUrl, uploadResult.BlobName);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(previousBlobName) &&
-            !string.Equals(previousBlobName, uploadResult.BlobName, StringComparison.Ordinal))
+        foreach (var previousBlobName in previousBlobNames)
         {
-            await imageStorage.DeleteTenderImageAsync(previousBlobName, cancellationToken);
+            if (!string.Equals(previousBlobName, uploadResult.BlobName, StringComparison.Ordinal))
+                await imageStorage.DeleteTenderImageAsync(previousBlobName, cancellationToken);
         }
 
-        return new UploadTenderImageCommandResponse(tender.Id, tender.ImageUrl!, tender.UpdatedAt);
+        return new UploadTenderImageCommandResponse(tender.Id, tender.ImageUrl!, tender.ImageUrls, tender.UpdatedAt);
+    }
+
+    private static string[] GetExistingBlobNames(TenderEntity tender)
+    {
+        if (tender.ImageBlobNames.Length > 0)
+            return tender.ImageBlobNames
+                .Where(blobName => !string.IsNullOrWhiteSpace(blobName))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+        return string.IsNullOrWhiteSpace(tender.ImageBlobName)
+            ? []
+            : [tender.ImageBlobName];
     }
 }

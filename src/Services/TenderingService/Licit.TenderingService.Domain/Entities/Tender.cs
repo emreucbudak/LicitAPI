@@ -5,6 +5,8 @@ namespace Licit.TenderingService.Domain.Entities;
 
 public class Tender : BaseEntity
 {
+    public const int MaxImageCount = 3;
+
     public string Title { get; private set; } = null!;
     public string Description { get; private set; } = null!;
     public decimal StartingPrice { get; private set; }
@@ -15,6 +17,8 @@ public class Tender : BaseEntity
     public Guid CategoryId { get; private set; }
     public string? ImageUrl { get; private set; }
     public string? ImageBlobName { get; private set; }
+    public string[] ImageUrls { get; private set; } = [];
+    public string[] ImageBlobNames { get; private set; } = [];
 
     public Category Category { get; private set; } = null!;
 
@@ -55,8 +59,26 @@ public class Tender : BaseEntity
 
         ImageUrl = imageUrl;
         ImageBlobName = imageBlobName;
+        ImageUrls = [imageUrl];
+        ImageBlobNames = [imageBlobName];
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void AddImage(string imageUrl, string imageBlobName)
+    {
+        if (Status != TenderStatus.Draft)
+            throw new TenderNotEditableException();
+
+        if (ImageUrls.Length >= MaxImageCount)
+            throw new InvalidOperationException($"A tender can have at most {MaxImageCount} images.");
+
+        ImageUrls = [.. ImageUrls, imageUrl];
+        ImageBlobNames = [.. ImageBlobNames, imageBlobName];
+        ImageUrl ??= imageUrl;
+        ImageBlobName ??= imageBlobName;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void ChangeStatus(TenderStatus newStatus)
     {
         var allowed = Status switch

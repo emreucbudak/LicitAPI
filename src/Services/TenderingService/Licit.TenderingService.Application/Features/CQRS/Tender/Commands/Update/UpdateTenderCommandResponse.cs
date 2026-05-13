@@ -10,5 +10,6 @@ public record UpdateTenderCommandResponse(
     string Status,
     Guid CategoryId,
     string? ImageUrl,
+    string[] ImageUrls,
     DateTime? UpdatedAt
 );

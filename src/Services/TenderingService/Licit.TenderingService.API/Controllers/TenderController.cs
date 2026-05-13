@@ -53,7 +53,7 @@ public class TenderController(IMediator mediator) : ControllerBase
     [Authorize]
     [HttpPost("{id:guid}/image")]
     [RequestSizeLimit(6 * 1024 * 1024)]
-    public async Task<IActionResult> UploadImage(Guid id, IFormFile file)
+    public async Task<IActionResult> UploadImage(Guid id, IFormFile file, [FromQuery] bool replace = false)
     {
         if (file is null)
             return BadRequest(new { message = "Gorsel dosyasi belirtilmelidir." });
@@ -65,7 +65,8 @@ public class TenderController(IMediator mediator) : ControllerBase
             stream,
             file.FileName,
             file.ContentType,
-            file.Length
+            file.Length,
+            replace
         ));
 
         return Ok(result);

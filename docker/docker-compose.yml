@@ -51,6 +51,9 @@ services:
       - JwtSettings__Issuer=Licit.AuthService
       - JwtSettings__Audience=Licit.Client
       - Redis__ConnectionString=${AZURE_REDIS_CONNECTION_STRING}
+      - TenderImages__ConnectionString=${TENDER_IMAGES_CONNECTION_STRING}
+      - TenderImages__ContainerName=${TENDER_IMAGES_CONTAINER_NAME:-tender-images}
+      - TenderImages__PublicBaseUrl=${TENDER_IMAGES_PUBLIC_BASE_URL}
       - RabbitMq__Host=rabbitmq
       - RabbitMq__Port=5672
       - RabbitMq__Username=licit

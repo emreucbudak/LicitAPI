@@ -12,6 +12,7 @@ public record GetTenderByIdQueryResponse(
     Guid CategoryId,
     string CategoryName,
     string? ImageUrl,
+    string[] ImageUrls,
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );

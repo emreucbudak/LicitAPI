@@ -44,6 +44,7 @@ public class UpdateTenderCommandHandler(
             tender.Status.ToString(),
             tender.CategoryId,
             tender.ImageUrl,
+            tender.ImageUrls,
             tender.UpdatedAt
         );
     }

@@ -44,6 +44,7 @@ public class CreateTenderCommandHandler(
             tender.Status.ToString(),
             tender.CategoryId,
             tender.ImageUrl,
+            tender.ImageUrls,
             tender.CreatedAt
         );
     }

@@ -35,6 +35,7 @@ public class GetAllTendersQueryHandler(
             t.CategoryId,
             t.Category?.Name ?? string.Empty,
             t.ImageUrl,
+            t.ImageUrls,
             t.CreatedAt
         )).ToList();
 

@@ -30,6 +30,7 @@ public class GetTenderByIdQueryHandler(
             tender.CategoryId,
             tender.Category?.Name ?? string.Empty,
             tender.ImageUrl,
+            tender.ImageUrls,
             tender.CreatedAt,
             tender.UpdatedAt
         );
