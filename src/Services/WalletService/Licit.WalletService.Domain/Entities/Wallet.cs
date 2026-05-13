@@ -6,8 +6,8 @@ namespace Licit.WalletService.Domain.Entities;
 public class Wallet : BaseEntity
 {
     public Guid UserId { get; private set; }
-    public decimal Balance { get; private set; }
-    public decimal FrozenBalance { get; private set; }
+    public int Balance { get; private set; }
+    public int FrozenBalance { get; private set; }
     public int Version { get; private set; }
 
     public ICollection<WalletTransaction> Transactions { get; private set; } = new List<WalletTransaction>();
@@ -22,7 +22,7 @@ public class Wallet : BaseEntity
         Version = 0;
     }
 
-    public WalletTransaction Deposit(decimal amount, Guid? referenceId = null, string? description = null)
+    public WalletTransaction Deposit(int amount, Guid? referenceId = null, string? description = null)
     {
         if (amount <= 0)
             throw new InvalidAmountException("Deposit");
@@ -36,7 +36,7 @@ public class Wallet : BaseEntity
         return transaction;
     }
 
-    public WalletTransaction Withdraw(decimal amount)
+    public WalletTransaction Withdraw(int amount)
     {
         if (amount <= 0)
             throw new InvalidAmountException("Withdraw");
@@ -52,7 +52,7 @@ public class Wallet : BaseEntity
         return transaction;
     }
 
-    public WalletTransaction Freeze(decimal amount, Guid referenceId, string? description)
+    public WalletTransaction Freeze(int amount, Guid referenceId, string? description)
     {
         if (amount <= 0)
             throw new InvalidAmountException("Freeze");
@@ -69,7 +69,7 @@ public class Wallet : BaseEntity
         return transaction;
     }
 
-    public WalletTransaction Unfreeze(decimal amount, Guid referenceId, string? description)
+    public WalletTransaction Unfreeze(int amount, Guid referenceId, string? description)
     {
         if (amount <= 0)
             throw new InvalidAmountException("Unfreeze");
@@ -86,7 +86,7 @@ public class Wallet : BaseEntity
         return transaction;
     }
 
-    public WalletTransaction Deduct(decimal amount, Guid referenceId, string? description)
+    public WalletTransaction Deduct(int amount, Guid referenceId, string? description)
     {
         if (amount <= 0)
             throw new InvalidAmountException("Deduct");

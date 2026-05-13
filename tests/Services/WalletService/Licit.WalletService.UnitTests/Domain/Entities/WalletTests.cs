@@ -37,12 +37,12 @@ public class WalletTests
     {
         var wallet = WalletTestFactory.CreateEmptyWallet();
 
-        var tx = wallet.Deposit(500m);
+        var tx = wallet.Deposit(500);
 
-        wallet.Balance.Should().Be(500m);
+        wallet.Balance.Should().Be(500);
         tx.Type.Should().Be(TransactionType.Deposit);
-        tx.Amount.Should().Be(500m);
-        tx.BalanceAfter.Should().Be(500m);
+        tx.Amount.Should().Be(500);
+        tx.BalanceAfter.Should().Be(500);
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class WalletTests
     {
         var wallet = WalletTestFactory.CreateEmptyWallet();
 
-        wallet.Deposit(100m);
+        wallet.Deposit(100);
 
         wallet.Transactions.Should().HaveCount(1);
     }
@@ -59,7 +59,7 @@ public class WalletTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100)]
-    public void Deposit_InvalidAmount_ShouldThrow(decimal amount)
+    public void Deposit_InvalidAmount_ShouldThrow(int amount)
     {
         var wallet = WalletTestFactory.CreateEmptyWallet();
 
@@ -75,21 +75,21 @@ public class WalletTests
     [Fact]
     public void Withdraw_ValidAmount_ShouldDecreaseBalance()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000);
 
-        var tx = wallet.Withdraw(300m);
+        var tx = wallet.Withdraw(300);
 
-        wallet.Balance.Should().Be(700m);
+        wallet.Balance.Should().Be(700);
         tx.Type.Should().Be(TransactionType.Withdraw);
-        tx.Amount.Should().Be(300m);
+        tx.Amount.Should().Be(300);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-50)]
-    public void Withdraw_InvalidAmount_ShouldThrow(decimal amount)
+    public void Withdraw_InvalidAmount_ShouldThrow(int amount)
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000);
 
         var act = () => wallet.Withdraw(amount);
 
@@ -99,9 +99,9 @@ public class WalletTests
     [Fact]
     public void Withdraw_InsufficientBalance_ShouldThrow()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(100m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(100);
 
-        var act = () => wallet.Withdraw(200m);
+        var act = () => wallet.Withdraw(200);
 
         act.Should().Throw<InsufficientBalanceException>();
     }
@@ -113,13 +113,13 @@ public class WalletTests
     [Fact]
     public void Freeze_ValidAmount_ShouldMoveFundsToFrozen()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000);
         var refId = Guid.NewGuid();
 
-        var tx = wallet.Freeze(300m, refId, "Test bloke");
+        var tx = wallet.Freeze(300, refId, "Test bloke");
 
-        wallet.Balance.Should().Be(700m);
-        wallet.FrozenBalance.Should().Be(300m);
+        wallet.Balance.Should().Be(700);
+        wallet.FrozenBalance.Should().Be(300);
         tx.Type.Should().Be(TransactionType.Freeze);
         tx.ReferenceId.Should().Be(refId);
     }
@@ -127,9 +127,9 @@ public class WalletTests
     [Theory]
     [InlineData(0)]
     [InlineData(-10)]
-    public void Freeze_InvalidAmount_ShouldThrow(decimal amount)
+    public void Freeze_InvalidAmount_ShouldThrow(int amount)
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000);
 
         var act = () => wallet.Freeze(amount, Guid.NewGuid(), null);
 
@@ -139,9 +139,9 @@ public class WalletTests
     [Fact]
     public void Freeze_InsufficientBalance_ShouldThrow()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(100m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(100);
 
-        var act = () => wallet.Freeze(200m, Guid.NewGuid(), null);
+        var act = () => wallet.Freeze(200, Guid.NewGuid(), null);
 
         act.Should().Throw<InsufficientBalanceException>();
     }
@@ -153,22 +153,22 @@ public class WalletTests
     [Fact]
     public void Unfreeze_ValidAmount_ShouldMoveFundsBackToBalance()
     {
-        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(700m, 300m);
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(700, 300);
         var refId = Guid.NewGuid();
 
-        var tx = wallet.Unfreeze(300m, refId, "Test çözme");
+        var tx = wallet.Unfreeze(300, refId, "Test çözme");
 
-        wallet.Balance.Should().Be(1000m);
-        wallet.FrozenBalance.Should().Be(0m);
+        wallet.Balance.Should().Be(1000);
+        wallet.FrozenBalance.Should().Be(0);
         tx.Type.Should().Be(TransactionType.Unfreeze);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
-    public void Unfreeze_InvalidAmount_ShouldThrow(decimal amount)
+    public void Unfreeze_InvalidAmount_ShouldThrow(int amount)
     {
-        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500m, 500m);
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500, 500);
 
         var act = () => wallet.Unfreeze(amount, Guid.NewGuid(), null);
 
@@ -178,9 +178,9 @@ public class WalletTests
     [Fact]
     public void Unfreeze_InsufficientFrozenBalance_ShouldThrow()
     {
-        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500m, 100m);
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500, 100);
 
-        var act = () => wallet.Unfreeze(200m, Guid.NewGuid(), null);
+        var act = () => wallet.Unfreeze(200, Guid.NewGuid(), null);
 
         act.Should().Throw<InsufficientFrozenBalanceException>();
     }
@@ -192,22 +192,22 @@ public class WalletTests
     [Fact]
     public void Deduct_ValidAmount_ShouldDecreaseFrozenBalance()
     {
-        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500m, 300m);
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500, 300);
         var refId = Guid.NewGuid();
 
-        var tx = wallet.Deduct(300m, refId, "İhale kesildi");
+        var tx = wallet.Deduct(300, refId, "İhale kesildi");
 
-        wallet.Balance.Should().Be(500m);
-        wallet.FrozenBalance.Should().Be(0m);
+        wallet.Balance.Should().Be(500);
+        wallet.FrozenBalance.Should().Be(0);
         tx.Type.Should().Be(TransactionType.Deduct);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void Deduct_InvalidAmount_ShouldThrow(decimal amount)
+    public void Deduct_InvalidAmount_ShouldThrow(int amount)
     {
-        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500m, 500m);
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500, 500);
 
         var act = () => wallet.Deduct(amount, Guid.NewGuid(), null);
 
@@ -217,9 +217,9 @@ public class WalletTests
     [Fact]
     public void Deduct_InsufficientFrozenBalance_ShouldThrow()
     {
-        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500m, 100m);
+        var wallet = WalletTestFactory.CreateWalletWithFrozenBalance(500, 100);
 
-        var act = () => wallet.Deduct(200m, Guid.NewGuid(), null);
+        var act = () => wallet.Deduct(200, Guid.NewGuid(), null);
 
         act.Should().Throw<InsufficientFrozenBalanceException>();
     }
@@ -233,15 +233,15 @@ public class WalletTests
     {
         var wallet = WalletTestFactory.CreateEmptyWallet();
 
-        wallet.Deposit(1000m);
-        wallet.Freeze(200m, Guid.NewGuid(), null);
-        wallet.Unfreeze(100m, Guid.NewGuid(), null);
-        wallet.Deduct(100m, Guid.NewGuid(), null);
-        wallet.Withdraw(300m);
+        wallet.Deposit(1000);
+        wallet.Freeze(200, Guid.NewGuid(), null);
+        wallet.Unfreeze(100, Guid.NewGuid(), null);
+        wallet.Deduct(100, Guid.NewGuid(), null);
+        wallet.Withdraw(300);
 
         wallet.Transactions.Should().HaveCount(5);
-        wallet.Balance.Should().Be(600m);
-        wallet.FrozenBalance.Should().Be(0m);
+        wallet.Balance.Should().Be(600);
+        wallet.FrozenBalance.Should().Be(0);
     }
 
     #endregion

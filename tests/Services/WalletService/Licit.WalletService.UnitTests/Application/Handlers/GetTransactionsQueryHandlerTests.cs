@@ -2,7 +2,6 @@ using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
 using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Queries.GetTransactions.Exceptions;
 using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;
 using Licit.WalletService.UnitTests.Common;
@@ -13,6 +12,7 @@ namespace Licit.WalletService.UnitTests.Application.Handlers;
 public class GetTransactionsQueryHandlerTests
 {
     private readonly IWalletRepository _walletRepo = Substitute.For<IWalletRepository>();
+    private readonly IWalletProvisioningService _walletProvisioningService = Substitute.For<IWalletProvisioningService>();
     private readonly IValidator<GetTransactionsQueryRequest> _validator = Substitute.For<IValidator<GetTransactionsQueryRequest>>();
     private readonly GetTransactionsQueryHandler _handler;
 
@@ -20,16 +20,17 @@ public class GetTransactionsQueryHandlerTests
     {
         _validator.ValidateAsync(Arg.Any<GetTransactionsQueryRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new GetTransactionsQueryHandler(_walletRepo, _validator);
+        _handler = new GetTransactionsQueryHandler(_walletRepo, _walletProvisioningService, _validator);
     }
 
     [Fact]
     public async Task Handle_WalletExists_ShouldReturnTransactions()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
-        _walletRepo.GetByUserIdAsync(wallet.UserId).Returns(wallet);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000);
+        _walletProvisioningService.EnsureWalletExistsAsync(wallet.UserId, Arg.Any<CancellationToken>())
+            .Returns(wallet);
 
-        var tx = new WalletTransaction(wallet.Id, TransactionType.Deposit, 1000m, "Yatırma", null, 1000m, 0m);
+        var tx = new WalletTransaction(wallet.Id, TransactionType.Deposit, 1000, "Yatırma", null, 1000, 0);
         _walletRepo.GetTransactionsByWalletIdAsync(wallet.Id, 1, 20).Returns(new List<WalletTransaction> { tx });
 
         var result = await _handler.Handle(new GetTransactionsQueryRequest(wallet.UserId, 1, 20), CancellationToken.None);
@@ -39,21 +40,25 @@ public class GetTransactionsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WalletNotFound_ShouldThrow()
+    public async Task Handle_NewWallet_ShouldReturnEmptyList()
     {
         var userId = Guid.NewGuid();
-        _walletRepo.GetByUserIdAsync(userId).Returns((Wallet?)null);
+        var wallet = WalletTestFactory.CreateEmptyWallet(userId);
+        _walletProvisioningService.EnsureWalletExistsAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(wallet);
+        _walletRepo.GetTransactionsByWalletIdAsync(wallet.Id, 1, 20).Returns(Enumerable.Empty<WalletTransaction>());
 
-        var act = () => _handler.Handle(new GetTransactionsQueryRequest(userId, 1, 20), CancellationToken.None);
+        var result = await _handler.Handle(new GetTransactionsQueryRequest(userId, 1, 20), CancellationToken.None);
 
-        await act.Should().ThrowAsync<WalletNotFoundForTransactionsException>();
+        result.Transactions.Should().BeEmpty();
     }
 
     [Fact]
     public async Task Handle_NoTransactions_ShouldReturnEmptyList()
     {
         var wallet = WalletTestFactory.CreateEmptyWallet();
-        _walletRepo.GetByUserIdAsync(wallet.UserId).Returns(wallet);
+        _walletProvisioningService.EnsureWalletExistsAsync(wallet.UserId, Arg.Any<CancellationToken>())
+            .Returns(wallet);
         _walletRepo.GetTransactionsByWalletIdAsync(wallet.Id, 1, 20).Returns(Enumerable.Empty<WalletTransaction>());
 
         var result = await _handler.Handle(new GetTransactionsQueryRequest(wallet.UserId, 1, 20), CancellationToken.None);

@@ -14,6 +14,7 @@ namespace Licit.WalletService.UnitTests.Application.Handlers;
 public class WithdrawFundsCommandHandlerTests
 {
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IUnitOfWorkTransaction _unitOfWorkTransaction = Substitute.For<IUnitOfWorkTransaction>();
     private readonly IWalletRepository _walletRepo = Substitute.For<IWalletRepository>();
     private readonly IValidator<WithdrawFundsCommandRequest> _validator = Substitute.For<IValidator<WithdrawFundsCommandRequest>>();
     private readonly WithdrawFundsCommandHandler _handler;
@@ -22,18 +23,20 @@ public class WithdrawFundsCommandHandlerTests
     {
         _validator.ValidateAsync(Arg.Any<WithdrawFundsCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
+        _unitOfWork.BeginTransactionAsync(Arg.Any<CancellationToken>())
+            .Returns(_unitOfWorkTransaction);
         _handler = new WithdrawFundsCommandHandler(_unitOfWork, _walletRepo, _validator);
     }
 
     [Fact]
     public async Task Handle_ValidRequest_ShouldWithdrawAndReturn()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(1000m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(1000);
         _walletRepo.GetByUserIdAsync(wallet.UserId).Returns(wallet);
 
-        var result = await _handler.Handle(new WithdrawFundsCommandRequest(wallet.UserId, 300m), CancellationToken.None);
+        var result = await _handler.Handle(new WithdrawFundsCommandRequest(wallet.UserId, 300), CancellationToken.None);
 
-        result.NewBalance.Should().Be(700m);
+        result.NewBalance.Should().Be(700);
     }
 
     [Fact]
@@ -42,7 +45,7 @@ public class WithdrawFundsCommandHandlerTests
         var userId = Guid.NewGuid();
         _walletRepo.GetByUserIdAsync(userId).Returns((Wallet?)null);
 
-        var act = () => _handler.Handle(new WithdrawFundsCommandRequest(userId, 100m), CancellationToken.None);
+        var act = () => _handler.Handle(new WithdrawFundsCommandRequest(userId, 100), CancellationToken.None);
 
         await act.Should().ThrowAsync<WalletNotFoundException>();
     }
@@ -50,10 +53,10 @@ public class WithdrawFundsCommandHandlerTests
     [Fact]
     public async Task Handle_InsufficientBalance_ShouldThrow()
     {
-        var wallet = WalletTestFactory.CreateWalletWithBalance(50m);
+        var wallet = WalletTestFactory.CreateWalletWithBalance(50);
         _walletRepo.GetByUserIdAsync(wallet.UserId).Returns(wallet);
 
-        var act = () => _handler.Handle(new WithdrawFundsCommandRequest(wallet.UserId, 100m), CancellationToken.None);
+        var act = () => _handler.Handle(new WithdrawFundsCommandRequest(wallet.UserId, 100), CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainExceptions.InsufficientBalanceException>();
     }

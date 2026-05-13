@@ -6,18 +6,17 @@ public class WalletTransaction : BaseEntity
 {
     public Guid WalletId { get; private set; }
     public TransactionType Type { get; private set; }
-    public decimal Amount { get; private set; }
+    public int Amount { get; private set; }
     public string Description { get; private set; } = null!;
     public Guid? ReferenceId { get; private set; }
-    public decimal BalanceAfter { get; private set; }
-    public decimal FrozenBalanceAfter { get; private set; }
-
+    public int BalanceAfter { get; private set; }
+    public int FrozenBalanceAfter { get; private set; }
     public Wallet Wallet { get; set; } = null!;
 
     private WalletTransaction() { }
 
-    public WalletTransaction(Guid walletId, TransactionType type, decimal amount,
-        string description, Guid? referenceId, decimal balanceAfter, decimal frozenBalanceAfter)
+    public WalletTransaction(Guid walletId, TransactionType type, int amount,
+        string description, Guid? referenceId, int balanceAfter, int frozenBalanceAfter)
     {
         WalletId = walletId;
         Type = type;

@@ -8,6 +8,9 @@ public class WithdrawFundsCommandValidator : AbstractValidator<WithdrawFundsComm
     public WithdrawFundsCommandValidator()
     {
         RuleFor(x => x.UserId).NotEmpty().WithMessage("Kullanıcı kimliği belirtilmelidir.");
-        RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Çekilecek tutar sıfırdan büyük olmalıdır.");
+        RuleFor(x => x.Amount)
+            .GreaterThan(0).WithMessage("Çekilecek tutar sıfırdan büyük olmalıdır.")
+            .Must(amount => decimal.Truncate(amount) == amount)
+            .WithMessage("Çekilecek tutar tam TL olmalıdır.");
     }
 }

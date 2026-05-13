@@ -22,7 +22,7 @@ public class DeductFundsCommandHandler(
 
         await using var unitOfWorkTransaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
 
-        var wallet = await walletRepository.GetByUserIdForUpdateAsync(request.UserId)
+        var wallet = await walletRepository.GetByUserIdAsync(request.UserId)
             ?? throw new WalletNotFoundException(request.UserId);
 
         var existingTransaction = await walletRepository.GetTransactionByWalletTypeAndReferenceAsync(
@@ -43,7 +43,7 @@ public class DeductFundsCommandHandler(
 
         try
         {
-            var transaction = wallet.Deduct(request.Amount, request.ReferenceId, request.Description);
+            var transaction = wallet.Deduct(checked((int)request.Amount), request.ReferenceId, request.Description);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWorkTransaction.CommitAsync(cancellationToken);
             return new DeductFundsCommandResponse(transaction.Id, wallet.Balance, wallet.FrozenBalance, transaction.CreatedAt);

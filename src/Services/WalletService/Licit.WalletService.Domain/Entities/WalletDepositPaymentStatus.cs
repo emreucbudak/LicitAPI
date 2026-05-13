@@ -2,8 +2,8 @@ namespace Licit.WalletService.Domain.Entities;
 
 public enum WalletDepositPaymentStatus
 {
-    Pending = 0,
-    Succeeded = 1,
-    Failed = 2,
-    Canceled = 3
+    Bekliyor = 0,
+    Başarılı = 1,
+    Başarısız = 2,
+    İptal = 3
 }

@@ -10,13 +10,10 @@ public class WalletConfiguration : IEntityTypeConfiguration<Wallet>
     {
         builder.HasKey(w => w.Id);
 
+        builder.Property(w => w.Id)
+            .ValueGeneratedNever();
+
         builder.HasIndex(w => w.UserId).IsUnique();
-
-        builder.Property(w => w.Balance)
-            .HasPrecision(18, 2);
-
-        builder.Property(w => w.FrozenBalance)
-            .HasPrecision(18, 2);
 
         builder.Property(w => w.Version)
             .HasDefaultValue(0);

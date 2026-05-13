@@ -1,6 +1,5 @@
-using FlashMediator;
 using Licit.WalletService.Application.Exceptions;
-using Licit.WalletService.Application.Features.CQRS.Wallet.Commands.Deposit;
+using Licit.WalletService.Application.Interfaces;
 using Licit.WalletService.Domain.Entities;
 using Licit.WalletService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,7 @@ namespace Licit.WalletService.API.Payments;
 
 public class StripeWalletDepositService(
     WalletDbContext dbContext,
-    IMediator mediator,
+    IWalletProvisioningService walletProvisioningService,
     IOptions<StripeWalletOptions> options,
     PaymentIntentService paymentIntentService,
     ILogger<StripeWalletDepositService> logger)
@@ -30,9 +29,18 @@ public class StripeWalletDepositService(
         EnsureStripeSecretConfigured();
         ValidateAmount(amount);
 
-        var normalizedAmount = decimal.Round(amount, 2);
+        var normalizedAmount = checked((int)amount);
         var currency = NormalizeCurrency(_options.Currency);
         clientIdempotencyKey = NormalizeIdempotencyKey(clientIdempotencyKey);
+
+        logger.LogInformation(
+            "Stripe cuzdan yukleme baslatiliyor. UserId: {UserId}, Amount: {Amount}, Currency: {Currency}, ClientIdempotencyKey: {ClientIdempotencyKey}",
+            userId,
+            normalizedAmount,
+            currency,
+            clientIdempotencyKey);
+
+        await walletProvisioningService.EnsureWalletExistsAsync(userId, cancellationToken);
 
         var existingPayment = await dbContext.WalletDepositPayments
             .AsNoTracking()
@@ -42,6 +50,13 @@ public class StripeWalletDepositService(
 
         if (existingPayment?.StripePaymentIntentId is not null)
         {
+            logger.LogInformation(
+                "Stripe cuzdan yukleme icin mevcut PaymentIntent kullaniliyor. UserId: {UserId}, DepositPaymentId: {DepositPaymentId}, PaymentIntentId: {PaymentIntentId}, Status: {Status}",
+                userId,
+                existingPayment.Id,
+                existingPayment.StripePaymentIntentId,
+                existingPayment.Status);
+
             var existingIntent = await paymentIntentService.GetAsync(
                 existingPayment.StripePaymentIntentId,
                 requestOptions: CreateRequestOptions(),
@@ -64,6 +79,13 @@ public class StripeWalletDepositService(
         var payment = new WalletDepositPayment(userId, normalizedAmount, currency, clientIdempotencyKey);
         dbContext.WalletDepositPayments.Add(payment);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Stripe cuzdan yukleme kaydi olusturuldu. UserId: {UserId}, DepositPaymentId: {DepositPaymentId}, Amount: {Amount}, Currency: {Currency}",
+            userId,
+            payment.Id,
+            payment.Amount,
+            payment.Currency);
 
         try
         {
@@ -89,6 +111,13 @@ public class StripeWalletDepositService(
 
             payment.RegisterPaymentIntent(paymentIntent.Id);
             await dbContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Stripe PaymentIntent cuzdan yukleme kaydina baglandi. UserId: {UserId}, DepositPaymentId: {DepositPaymentId}, PaymentIntentId: {PaymentIntentId}, StripeStatus: {StripeStatus}",
+                userId,
+                payment.Id,
+                paymentIntent.Id,
+                paymentIntent.Status);
 
             return new WalletDepositPaymentIntentResponse(
                 payment.Id,
@@ -139,7 +168,7 @@ public class StripeWalletDepositService(
         switch (stripeEvent.Type)
         {
             case EventTypes.PaymentIntentSucceeded:
-                await ConfirmPaymentIntentSucceededAsync(paymentIntent, cancellationToken);
+                await ApplyPaymentIntentAsync(paymentIntent, expectedUserId: null, cancellationToken);
                 break;
             case EventTypes.PaymentIntentPaymentFailed:
                 await MarkPaymentFailedAsync(paymentIntent, cancellationToken);
@@ -155,13 +184,35 @@ public class StripeWalletDepositService(
         Guid? expectedUserId,
         CancellationToken cancellationToken)
     {
-        var payment = await FindPaymentAsync(paymentIntent, cancellationToken)
+        logger.LogInformation(
+            "Stripe PaymentIntent apply kontrolu basladi. PaymentIntentId: {PaymentIntentId}, StripeStatus: {StripeStatus}, ExpectedUserId: {ExpectedUserId}",
+            paymentIntent.Id,
+            paymentIntent.Status,
+            expectedUserId);
+
+        var payment = await FindPaymentAsync(paymentIntent, lockForUpdate: false, cancellationToken)
             ?? throw new BusinessRuleException("Odeme kaydi bulunamadi.");
+
+        logger.LogInformation(
+            "Stripe odeme kaydi bulundu. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, Status: {Status}, Amount: {Amount}, WalletTransactionId: {WalletTransactionId}",
+            paymentIntent.Id,
+            payment.Id,
+            payment.UserId,
+            payment.Status,
+            payment.Amount,
+            payment.WalletTransactionId);
 
         if (expectedUserId.HasValue && payment.UserId != expectedUserId.Value)
             throw new UnauthorizedException("Bu odeme kaydina erisim yetkin yok.");
 
-        if (payment.Status == WalletDepositPaymentStatus.Succeeded)
+        if (IsSucceeded(payment))
+        {
+            logger.LogInformation(
+                "Stripe odeme daha once wallet bakiyesine uygulanmis. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, WalletTransactionId: {WalletTransactionId}",
+                paymentIntent.Id,
+                payment.Id,
+                payment.WalletTransactionId);
+
             return new WalletDepositPaymentSyncResponse(
                 payment.Id,
                 paymentIntent.Id,
@@ -170,8 +221,16 @@ public class StripeWalletDepositService(
                 payment.WalletTransactionId,
                 payment.Amount,
                 payment.Currency);
+        }
 
         if (!string.Equals(paymentIntent.Status, "succeeded", StringComparison.OrdinalIgnoreCase))
+        {
+            logger.LogInformation(
+                "Stripe odeme henuz succeeded degil. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, StripeStatus: {StripeStatus}",
+                paymentIntent.Id,
+                payment.Id,
+                paymentIntent.Status);
+
             return new WalletDepositPaymentSyncResponse(
                 payment.Id,
                 paymentIntent.Id,
@@ -180,34 +239,84 @@ public class StripeWalletDepositService(
                 payment.WalletTransactionId,
                 payment.Amount,
                 payment.Currency);
+        }
 
-        var stripeAmount = VerifyPaymentIntentMatches(payment, paymentIntent);
+        await walletProvisioningService.EnsureWalletExistsAsync(payment.UserId, cancellationToken);
 
+        dbContext.Entry(payment).State = EntityState.Detached;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var depositResult = await mediator.Send(
-                new DepositFundsCommandRequest(
-                    payment.UserId,
-                    stripeAmount,
-                    $"stripe:{paymentIntent.Id}",
+            payment = await FindPaymentAsync(paymentIntent, lockForUpdate: true, cancellationToken)
+                ?? throw new BusinessRuleException("Odeme kaydi bulunamadi.");
+
+            logger.LogInformation(
+                "Stripe odeme kaydi kilitli olarak alindi. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, Status: {Status}",
+                paymentIntent.Id,
+                payment.Id,
+                payment.UserId,
+                payment.Status);
+
+            if (expectedUserId.HasValue && payment.UserId != expectedUserId.Value)
+                throw new UnauthorizedException("Bu odeme kaydina erisim yetkin yok.");
+
+            if (IsSucceeded(payment))
+            {
+                await transaction.CommitAsync(cancellationToken);
+                return new WalletDepositPaymentSyncResponse(
                     payment.Id,
-                    "Stripe kart ile cüzdan yükleme"),
+                    paymentIntent.Id,
+                    payment.Status.ToString(),
+                    true,
+                    payment.WalletTransactionId,
+                    payment.Amount,
+                    payment.Currency);
+            }
+
+            var stripeAmount = VerifyPaymentIntentMatches(payment, paymentIntent);
+
+            var depositTransaction = await ApplyWalletDepositAsync(
+                payment,
+                stripeAmount,
+                paymentIntent.Id,
                 cancellationToken);
 
-            payment.MarkSucceeded(depositResult.TransactionId);
+            payment.MarkSucceeded(depositTransaction.Id);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Stripe cuzdan yukleme tamamlandi. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, TransactionId: {TransactionId}, Amount: {Amount}, Status: {Status}",
+                paymentIntent.Id,
+                payment.Id,
+                payment.UserId,
+                depositTransaction.Id,
+                stripeAmount,
+                payment.Status);
 
             return new WalletDepositPaymentSyncResponse(
                 payment.Id,
                 paymentIntent.Id,
                 payment.Status.ToString(),
                 true,
-                depositResult.TransactionId,
+                depositTransaction.Id,
                 stripeAmount,
                 payment.Currency);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            logger.LogError(
+                exception,
+                "Stripe cuzdan yukleme concurrency hatasi. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, Status: {PaymentStatus}, Entries: {Entries}",
+                paymentIntent.Id,
+                payment.Id,
+                payment.UserId,
+                payment.Status,
+                string.Join(", ", exception.Entries.Select(entry => $"{entry.Entity.GetType().Name}:{entry.State}")));
+
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
         catch
         {
@@ -216,46 +325,104 @@ public class StripeWalletDepositService(
         }
     }
 
-    private async Task ConfirmPaymentIntentSucceededAsync(PaymentIntent paymentIntent, CancellationToken cancellationToken)
+    private async Task<WalletTransaction> ApplyWalletDepositAsync(
+        WalletDepositPayment payment,
+        int amount,
+        string paymentIntentId,
+        CancellationToken cancellationToken)
     {
-        var payment = await FindPaymentAsync(paymentIntent, cancellationToken);
-        if (payment is null || payment.Status == WalletDepositPaymentStatus.Succeeded)
-            return;
+        var wallet = await dbContext.Wallets
+            .FirstOrDefaultAsync(existingWallet => existingWallet.UserId == payment.UserId, cancellationToken)
+            ?? throw new BusinessRuleException("Cuzdan bulunamadi.");
 
-        if (!string.Equals(paymentIntent.Status, "succeeded", StringComparison.OrdinalIgnoreCase))
-            return;
+        var existingTransaction = await dbContext.WalletTransactions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                transaction => transaction.WalletId == wallet.Id &&
+                               transaction.Type == TransactionType.Deposit &&
+                               transaction.ReferenceId == payment.Id,
+                cancellationToken);
 
-        VerifyPaymentIntentMatches(payment, paymentIntent);
+        if (existingTransaction is not null)
+        {
+            logger.LogInformation(
+                "Stripe cuzdan yukleme daha once uygulanmis. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, WalletId: {WalletId}, TransactionId: {TransactionId}",
+                paymentIntentId,
+                payment.Id,
+                payment.UserId,
+                wallet.Id,
+                existingTransaction.Id);
+
+            return existingTransaction;
+        }
+
+        logger.LogInformation(
+            "Stripe cuzdan yukleme uygulanacak. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, WalletId: {WalletId}, Amount: {Amount}, BalanceBefore: {BalanceBefore}, FrozenBefore: {FrozenBefore}",
+            paymentIntentId,
+            payment.Id,
+            payment.UserId,
+            wallet.Id,
+            amount,
+            wallet.Balance,
+            wallet.FrozenBalance);
+
+        var transaction = wallet.Deposit(amount, payment.Id, "Cüzdan Bakiye yükleme");
+        dbContext.WalletTransactions.Add(transaction);
+
+        logger.LogInformation(
+            "Stripe cuzdan yukleme entity uzerinde uygulandi. PaymentIntentId: {PaymentIntentId}, DepositPaymentId: {DepositPaymentId}, UserId: {UserId}, WalletId: {WalletId}, TransactionId: {TransactionId}, BalanceAfter: {BalanceAfter}, FrozenAfter: {FrozenAfter}",
+            paymentIntentId,
+            payment.Id,
+            payment.UserId,
+            wallet.Id,
+            transaction.Id,
+            wallet.Balance,
+            wallet.FrozenBalance);
+
+        return transaction;
     }
 
     private async Task MarkPaymentFailedAsync(PaymentIntent paymentIntent, CancellationToken cancellationToken)
     {
-        var payment = await FindPaymentAsync(paymentIntent, cancellationToken);
-        if (payment is null || payment.Status == WalletDepositPaymentStatus.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var payment = await FindPaymentAsync(paymentIntent, lockForUpdate: true, cancellationToken);
+        if (payment is null || IsSucceeded(payment))
             return;
 
         payment.MarkFailed(paymentIntent.LastPaymentError?.Code, paymentIntent.LastPaymentError?.Message);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task MarkPaymentCanceledAsync(PaymentIntent paymentIntent, CancellationToken cancellationToken)
     {
-        var payment = await FindPaymentAsync(paymentIntent, cancellationToken);
-        if (payment is null || payment.Status == WalletDepositPaymentStatus.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var payment = await FindPaymentAsync(paymentIntent, lockForUpdate: true, cancellationToken);
+        if (payment is null || IsSucceeded(payment))
             return;
 
         payment.MarkCanceled();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task<WalletDepositPayment?> FindPaymentAsync(
         PaymentIntent paymentIntent,
+        bool lockForUpdate,
         CancellationToken cancellationToken)
     {
-        var payment = await dbContext.WalletDepositPayments
-            .FirstOrDefaultAsync(
-                depositPayment => depositPayment.StripePaymentIntentId == paymentIntent.Id,
-                cancellationToken);
+        var payment = lockForUpdate
+            ? await dbContext.WalletDepositPayments
+                .FromSqlInterpolated($"""
+                    SELECT * FROM "WalletDepositPayments"
+                    WHERE "StripePaymentIntentId" = {paymentIntent.Id}
+                    FOR UPDATE
+                    """)
+                .FirstOrDefaultAsync(cancellationToken)
+            : await dbContext.WalletDepositPayments
+                .FirstOrDefaultAsync(
+                    depositPayment => depositPayment.StripePaymentIntentId == paymentIntent.Id,
+                    cancellationToken);
 
         if (payment is not null)
             return payment;
@@ -267,8 +434,22 @@ public class StripeWalletDepositService(
             return null;
         }
 
-        payment = await dbContext.WalletDepositPayments
-            .FirstOrDefaultAsync(depositPayment => depositPayment.Id == depositPaymentId, cancellationToken);
+        payment = lockForUpdate
+            ? await dbContext.WalletDepositPayments
+                .FromSqlInterpolated($"""
+                    SELECT * FROM "WalletDepositPayments"
+                    WHERE "Id" = {depositPaymentId}
+                    FOR UPDATE
+                    """)
+                .FirstOrDefaultAsync(cancellationToken)
+            : await dbContext.WalletDepositPayments
+                .FirstOrDefaultAsync(depositPayment => depositPayment.Id == depositPaymentId, cancellationToken);
+
+        if (payment?.StripePaymentIntentId is not null &&
+            !string.Equals(payment.StripePaymentIntentId, paymentIntent.Id, StringComparison.Ordinal))
+        {
+            return null;
+        }
 
         if (payment is not null && payment.StripePaymentIntentId is null)
         {
@@ -279,7 +460,7 @@ public class StripeWalletDepositService(
         return payment;
     }
 
-    private decimal VerifyPaymentIntentMatches(WalletDepositPayment payment, PaymentIntent paymentIntent)
+    private int VerifyPaymentIntentMatches(WalletDepositPayment payment, PaymentIntent paymentIntent)
     {
         if (!string.Equals(paymentIntent.Currency, payment.Currency, StringComparison.OrdinalIgnoreCase))
             throw new BusinessRuleException("Odeme para birimi cuzdan yukleme kaydiyla eslesmiyor.");
@@ -291,7 +472,7 @@ public class StripeWalletDepositService(
         if (receivedAmount != ToMinorUnits(payment.Amount))
             throw new BusinessRuleException("Odeme tutari cuzdan yukleme kaydiyla eslesmiyor.");
 
-        return FromMinorUnits(receivedAmount);
+        return payment.Amount;
     }
 
     private void ValidateAmount(decimal amount)
@@ -302,8 +483,8 @@ public class StripeWalletDepositService(
         if (amount > _options.MaximumAmount)
             throw new BusinessRuleException($"Yukleme tutari en fazla {_options.MaximumAmount:0.##} olabilir.");
 
-        if (decimal.Round(amount, 2) != amount)
-            throw new BusinessRuleException("Yukleme tutari en fazla iki ondalik basamak icerebilir.");
+        if (decimal.Truncate(amount) != amount)
+            throw new BusinessRuleException("Yukleme tutari tam TL olmalidir.");
     }
 
     private void EnsureStripeSecretConfigured()
@@ -332,6 +513,6 @@ public class StripeWalletDepositService(
     private static long ToMinorUnits(decimal amount) =>
         decimal.ToInt64(decimal.Round(amount * 100m, 0, MidpointRounding.AwayFromZero));
 
-    private static decimal FromMinorUnits(long amount) =>
-        decimal.Round(amount / 100m, 2);
+    private static bool IsSucceeded(WalletDepositPayment payment) =>
+        Convert.ToInt32(payment.Status) == 1;
 }

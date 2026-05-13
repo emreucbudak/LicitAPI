@@ -11,14 +11,14 @@ public class FreezeFundsCommandValidatorTests
     [Fact]
     public async Task ValidRequest_ShouldNotHaveErrors()
     {
-        var result = await _validator.TestValidateAsync(new FreezeFundsCommandRequest(Guid.NewGuid(), 100m, Guid.NewGuid(), null));
+        var result = await _validator.TestValidateAsync(new FreezeFundsCommandRequest(Guid.NewGuid(), 100, Guid.NewGuid(), null));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
     public async Task UserId_WhenEmpty_ShouldHaveError()
     {
-        var result = await _validator.TestValidateAsync(new FreezeFundsCommandRequest(Guid.Empty, 100m, Guid.NewGuid(), null));
+        var result = await _validator.TestValidateAsync(new FreezeFundsCommandRequest(Guid.Empty, 100, Guid.NewGuid(), null));
         result.ShouldHaveValidationErrorFor(x => x.UserId);
     }
 
@@ -32,7 +32,7 @@ public class FreezeFundsCommandValidatorTests
     [Fact]
     public async Task ReferenceId_WhenEmpty_ShouldHaveError()
     {
-        var result = await _validator.TestValidateAsync(new FreezeFundsCommandRequest(Guid.NewGuid(), 100m, Guid.Empty, null));
+        var result = await _validator.TestValidateAsync(new FreezeFundsCommandRequest(Guid.NewGuid(), 100, Guid.Empty, null));
         result.ShouldHaveValidationErrorFor(x => x.ReferenceId);
     }
 }

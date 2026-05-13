@@ -9,7 +9,7 @@ public static class WalletTestFactory
         return new Wallet(userId ?? Guid.NewGuid());
     }
 
-    public static Wallet CreateWalletWithBalance(decimal balance, Guid? userId = null)
+    public static Wallet CreateWalletWithBalance(int balance, Guid? userId = null)
     {
         var wallet = CreateEmptyWallet(userId);
         if (balance > 0)
@@ -17,7 +17,7 @@ public static class WalletTestFactory
         return wallet;
     }
 
-    public static Wallet CreateWalletWithFrozenBalance(decimal available, decimal frozen, Guid? userId = null)
+    public static Wallet CreateWalletWithFrozenBalance(int available, int frozen, Guid? userId = null)
     {
         var wallet = CreateWalletWithBalance(available + frozen, userId);
         wallet.Freeze(frozen, Guid.NewGuid(), null);

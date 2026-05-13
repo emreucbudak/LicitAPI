@@ -10,8 +10,8 @@ public class WalletDepositPaymentConfiguration : IEntityTypeConfiguration<Wallet
     {
         builder.HasKey(payment => payment.Id);
 
-        builder.Property(payment => payment.Amount)
-            .HasPrecision(18, 2);
+        builder.Property(payment => payment.Id)
+            .ValueGeneratedNever();
 
         builder.Property(payment => payment.Currency)
             .HasMaxLength(3)

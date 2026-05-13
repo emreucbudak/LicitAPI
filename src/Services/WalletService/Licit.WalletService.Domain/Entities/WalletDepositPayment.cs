@@ -5,8 +5,7 @@ namespace Licit.WalletService.Domain.Entities;
 public class WalletDepositPayment : BaseEntity
 {
     public Guid UserId { get; private set; }
-    public decimal Amount { get; private set; }
-    public string Currency { get; private set; } = null!;
+    public int Amount { get; private set; }
     public WalletDepositPaymentStatus Status { get; private set; }
     public string ClientIdempotencyKey { get; private set; } = null!;
     public string? StripePaymentIntentId { get; private set; }
@@ -14,16 +13,17 @@ public class WalletDepositPayment : BaseEntity
     public DateTime? ProcessedAt { get; private set; }
     public string? FailureCode { get; private set; }
     public string? FailureMessage { get; private set; }
+    public string Currency { get; private set; } = null!;
 
     private WalletDepositPayment() { }
 
-    public WalletDepositPayment(Guid userId, decimal amount, string currency, string clientIdempotencyKey)
+    public WalletDepositPayment(Guid userId, int amount, string currency, string clientIdempotencyKey)
     {
         UserId = userId;
         Amount = amount;
-        Currency = currency.ToLowerInvariant();
+        Currency = "try";
         ClientIdempotencyKey = clientIdempotencyKey;
-        Status = WalletDepositPaymentStatus.Pending;
+        Status = WalletDepositPaymentStatus.Bekliyor;
     }
 
     public void RegisterPaymentIntent(string paymentIntentId)
@@ -34,7 +34,7 @@ public class WalletDepositPayment : BaseEntity
 
     public void MarkSucceeded(Guid walletTransactionId)
     {
-        Status = WalletDepositPaymentStatus.Succeeded;
+        Status = WalletDepositPaymentStatus.Başarılı;
         WalletTransactionId = walletTransactionId;
         ProcessedAt = DateTime.UtcNow;
         FailureCode = null;
@@ -44,7 +44,7 @@ public class WalletDepositPayment : BaseEntity
 
     public void MarkFailed(string? failureCode, string? failureMessage)
     {
-        Status = WalletDepositPaymentStatus.Failed;
+        Status = WalletDepositPaymentStatus.Başarısız;
         FailureCode = failureCode;
         FailureMessage = failureMessage;
         ProcessedAt = DateTime.UtcNow;
@@ -53,7 +53,7 @@ public class WalletDepositPayment : BaseEntity
 
     public void MarkCanceled()
     {
-        Status = WalletDepositPaymentStatus.Canceled;
+        Status = WalletDepositPaymentStatus.İptal;
         ProcessedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }

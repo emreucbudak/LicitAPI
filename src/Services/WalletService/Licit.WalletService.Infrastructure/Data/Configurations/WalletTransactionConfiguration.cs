@@ -10,22 +10,16 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
     {
         builder.HasKey(t => t.Id);
 
+        builder.Property(t => t.Id)
+            .ValueGeneratedNever();
+
         builder.Property(t => t.Type)
             .HasConversion<string>()
             .HasMaxLength(50);
 
-        builder.Property(t => t.Amount)
-            .HasPrecision(18, 2);
-
         builder.Property(t => t.Description)
             .HasMaxLength(500)
             .IsRequired();
-
-        builder.Property(t => t.BalanceAfter)
-            .HasPrecision(18, 2);
-
-        builder.Property(t => t.FrozenBalanceAfter)
-            .HasPrecision(18, 2);
 
         builder.HasIndex(t => new { t.WalletId, t.CreatedAt })
             .IsDescending(false, true);
