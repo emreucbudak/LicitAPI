@@ -16,15 +16,17 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+var defaultConnectionString = RequireConnectionString(builder.Configuration, "DefaultConnection");
+var redisConnectionString = RequireConfigurationValue(builder.Configuration, "Redis:ConnectionString");
 
 // Serilog
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 // JWT Settings
-var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
-var jwtIssuer = builder.Configuration["JwtSettings:Issuer"]!;
-var jwtAudience = builder.Configuration["JwtSettings:Audience"]!;
+var jwtSecret = RequireConfigurationValue(builder.Configuration, "JwtSettings:Secret");
+var jwtIssuer = RequireConfigurationValue(builder.Configuration, "JwtSettings:Issuer");
+var jwtAudience = RequireConfigurationValue(builder.Configuration, "JwtSettings:Audience");
 
 // CORS
 builder.Services.AddCors(options =>
@@ -42,7 +44,7 @@ builder.Services.AddCors(options =>
 
 // Database
 builder.Services.AddDbContext<TenderingDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(defaultConnectionString));
 
 // Unit of Work
 builder.Services.AddHttpContextAccessor();
@@ -130,13 +132,13 @@ builder.Services.AddSwaggerGen(options =>
 // Redis Cache
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    options.Configuration = redisConnectionString;
     options.InstanceName = "Tendering:";
 });
 
 // Health Checks
 builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgresql");
+    .AddNpgSql(defaultConnectionString, name: "postgresql");
 
 var app = builder.Build();
 
@@ -167,3 +169,21 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();
+
+static string RequireConnectionString(IConfiguration configuration, string name)
+{
+    var value = configuration.GetConnectionString(name);
+    if (string.IsNullOrWhiteSpace(value))
+        throw new InvalidOperationException($"ConnectionStrings:{name} must be configured.");
+
+    return value;
+}
+
+static string RequireConfigurationValue(IConfiguration configuration, string key)
+{
+    var value = configuration[key];
+    if (string.IsNullOrWhiteSpace(value))
+        throw new InvalidOperationException($"{key} must be configured.");
+
+    return value;
+}
