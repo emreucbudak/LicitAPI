@@ -7,6 +7,7 @@ using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById.Ex
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
 using Licit.TenderingService.UnitTests.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Licit.TenderingService.UnitTests.Application.Handlers;
@@ -24,7 +25,7 @@ public class ChangeTenderStatusCommandHandlerTests
     {
         _validator.ValidateAsync(Arg.Any<ChangeTenderStatusCommandRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ValidationResult());
-        _handler = new ChangeTenderStatusCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator, _eventPublisher);
+        _handler = new ChangeTenderStatusCommandHandler(_unitOfWork, _tenderRepo, _validator, _cacheInvalidator, _eventPublisher, NullLogger<ChangeTenderStatusCommandHandler>.Instance);
     }
 
     [Fact]
@@ -107,5 +108,20 @@ public class ChangeTenderStatusCommandHandlerTests
         var act = () => _handler.Handle(new ChangeTenderStatusCommandRequest(Guid.Empty, "Active"), CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task Handle_EventPublisherFails_ShouldStillReturnSavedStatus()
+    {
+        var tender = TenderTestFactory.CreateDraftTender();
+        _tenderRepo.GetByIdAsync(tender.Id).Returns(tender);
+        _eventPublisher
+            .PublishTenderStatusChangedAsync(tender.Id, tender.Title, "Active", tender.ImageUrl, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("RabbitMQ unavailable")));
+
+        var result = await _handler.Handle(new ChangeTenderStatusCommandRequest(tender.Id, "Active"), CancellationToken.None);
+
+        result.Status.Should().Be("Active");
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

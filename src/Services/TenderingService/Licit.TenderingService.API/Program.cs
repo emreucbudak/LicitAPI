@@ -63,12 +63,7 @@ builder.Services.Configure<TenderImageStorageOptions>(builder.Configuration.GetS
 builder.Services.AddScoped<ITenderImageStorageService, AzureBlobTenderImageStorageService>();
 
 // RabbitMQ Event Publisher
-builder.Services.AddSingleton(sp =>
-    RabbitMqEventPublisher.CreateAsync(
-        sp.GetRequiredService<IConfiguration>(),
-        sp.GetRequiredService<ILogger<RabbitMqEventPublisher>>()
-    ).GetAwaiter().GetResult());
-builder.Services.AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<RabbitMqEventPublisher>());
+builder.Services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
 
 // FlashMediator (CQRS)
 builder.Services.AddFlashMediator(

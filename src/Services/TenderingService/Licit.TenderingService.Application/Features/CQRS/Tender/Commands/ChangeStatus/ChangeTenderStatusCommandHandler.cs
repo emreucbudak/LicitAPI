@@ -4,6 +4,7 @@ using Licit.TenderingService.Application.Features.CQRS.Tender.Commands.ChangeSta
 using Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetById.Exceptions;
 using Licit.TenderingService.Application.Interfaces;
 using Licit.TenderingService.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using DomainExceptions = Licit.TenderingService.Domain.Exceptions;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Commands.ChangeStatus;
@@ -13,7 +14,8 @@ public class ChangeTenderStatusCommandHandler(
     ITenderRepository tenderRepository,
     IValidator<ChangeTenderStatusCommandRequest> validator,
     ITenderCacheInvalidator cacheInvalidator,
-    IEventPublisher eventPublisher) : IRequestHandler<ChangeTenderStatusCommandRequest, ChangeTenderStatusCommandResponse>
+    IEventPublisher eventPublisher,
+    ILogger<ChangeTenderStatusCommandHandler> logger) : IRequestHandler<ChangeTenderStatusCommandRequest, ChangeTenderStatusCommandResponse>
 {
     public async Task<ChangeTenderStatusCommandResponse> Handle(ChangeTenderStatusCommandRequest request, CancellationToken cancellationToken)
     {
@@ -38,7 +40,22 @@ public class ChangeTenderStatusCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheInvalidator.InvalidateAsync(cancellationToken);
-        await eventPublisher.PublishTenderStatusChangedAsync(tender.Id, tender.Title, tender.Status.ToString(), tender.ImageUrl, cancellationToken);
+        try
+        {
+            await eventPublisher.PublishTenderStatusChangedAsync(tender.Id, tender.Title, tender.Status.ToString(), tender.ImageUrl, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Tender status was saved but TenderStatusChanged event could not be published. TenderId: {TenderId}, Status: {Status}",
+                tender.Id,
+                tender.Status);
+        }
 
         return new ChangeTenderStatusCommandResponse(tender.Id, tender.Status.ToString(), tender.UpdatedAt);
     }
