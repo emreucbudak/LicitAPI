@@ -100,13 +100,7 @@ public class TenderRepository : ITenderRepository
         IReadOnlyCollection<Guid>? categoryIds)
     {
         if (activeOnly)
-        {
-            var now = DateTime.UtcNow;
-            query = query.Where(t =>
-                t.Status == TenderStatus.Active &&
-                t.StartDate <= now &&
-                t.EndDate >= now);
-        }
+            query = query.Where(t => t.Status == TenderStatus.Active);
 
         if (categoryIds is { Count: > 0 })
             query = query.Where(t => categoryIds.Contains(t.CategoryId));

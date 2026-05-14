@@ -21,6 +21,12 @@ public class GetAllTendersQueryHandlerTests
     }
 
     [Fact]
+    public void Request_ShouldBypassCachingPipeline()
+    {
+        new GetAllTendersQueryRequest().Should().NotBeAssignableTo<ICacheableQuery>();
+    }
+
+    [Fact]
     public async Task Handle_WithTenders_ShouldReturnAllTenders()
     {
         var tender1 = TenderTestFactory.CreateDraftTender(title: "İhale 1");

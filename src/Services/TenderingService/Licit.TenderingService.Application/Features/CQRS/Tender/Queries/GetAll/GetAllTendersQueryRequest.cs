@@ -1,5 +1,4 @@
 using FlashMediator;
-using Licit.TenderingService.Application.Interfaces;
 
 namespace Licit.TenderingService.Application.Features.CQRS.Tender.Queries.GetAll;
 
@@ -9,4 +8,4 @@ public record GetAllTendersQueryRequest(
     string? Search = null,
     bool ActiveOnly = false,
     Guid? CategoryId = null
-) : IRequest<GetAllTendersQueryResponse>, ICacheableQuery;
+) : IRequest<GetAllTendersQueryResponse>;
