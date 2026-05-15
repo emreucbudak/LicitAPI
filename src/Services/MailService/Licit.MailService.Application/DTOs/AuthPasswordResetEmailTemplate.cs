@@ -5,7 +5,7 @@ namespace Licit.MailService.Application.DTOs;
 
 public static class AuthPasswordResetEmailTemplate
 {
-    public static string BuildSubject() => "Licit sifre sifirlama kodunuz";
+    public static string BuildSubject() => "Licit şifre sıfırlama kodunuz";
 
     public static string BuildBody(AuthPasswordResetEmailEvent emailEvent)
     {
@@ -15,7 +15,7 @@ public static class AuthPasswordResetEmailTemplate
             ? string.Empty
             : $"<p>Merhaba {WebUtility.HtmlEncode(emailEvent.UserName)},</p>";
         var expiryText = emailEvent.ExpiresAt.HasValue
-            ? $"<p>Kod, {emailEvent.ExpiresAt.Value:dd.MM.yyyy HH:mm} tarihine kadar gecerlidir.</p>"
+            ? $"<p>Kod, {emailEvent.ExpiresAt.Value:dd.MM.yyyy HH:mm} tarihine kadar geçerlidir.</p>"
             : string.Empty;
 
         var body = new StringBuilder();
@@ -23,13 +23,13 @@ public static class AuthPasswordResetEmailTemplate
         body.AppendLine("<body style=\"font-family:Arial,sans-serif;background-color:#f9fafb;padding:24px;color:#111827;\">");
         body.AppendLine("  <div style=\"max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px;border:1px solid #e5e7eb;\">");
         body.AppendLine(safeUserName);
-        body.AppendLine("    <p>Sifrenizi sifirlamak icin asagidaki 6 haneli dogrulama kodunu kullanin:</p>");
+        body.AppendLine("    <p>Şifrenizi sıfırlamak için aşağıdaki 6 haneli doğrulama kodunu kullanın:</p>");
         body.AppendLine("    <div style=\"font-size:32px;font-weight:700;letter-spacing:6px;padding:16px 20px;border-radius:12px;background:#f3f4f6;text-align:center;margin:24px 0;\">");
         body.AppendLine(safeCode);
         body.AppendLine("    </div>");
         body.AppendLine(expiryText);
-        body.AppendLine($"    <p>Bu kod <strong>{safeEmail}</strong> adresi icin olusturuldu.</p>");
-        body.AppendLine("    <p>Eger bu sifre sifirlama talebini siz baslatmadiysaniz bu e-postayi yok sayabilirsiniz.</p>");
+        body.AppendLine($"    <p>Bu kod <strong>{safeEmail}</strong> adresi için oluşturuldu.</p>");
+        body.AppendLine("    <p>Bu şifre sıfırlama talebini siz başlatmadıysanız bu e-postayı yok sayabilirsiniz.</p>");
         body.AppendLine("  </div>");
         body.AppendLine("</body>");
         body.AppendLine("</html>");
